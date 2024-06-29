@@ -29,6 +29,10 @@ users_collection = db.user_details
 
 translator = Translator()
 
+@app.route('/')
+def home():
+    return "Hello, Flask on Vercel!"
+
 def time_now():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -255,4 +259,4 @@ def get_cities():
     
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
+    app.run()

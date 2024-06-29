@@ -1,13 +1,10 @@
 from flask import Flask, jsonify, request
-import firebase_admin
-from firebase_admin import credentials, db
 from flask_cors import CORS
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 from googletrans import Translator
-import json, time
-from geopy.geocoders import Nominatim
+from pymongo import MongoClient
 from time_utils import serve_time
 from categories.skincaretypes import serve_scc, serve_bcc, serve_mem
 from categories.skincancerprevention import serve_sunsafety,serve_traditionalc,serve_uvindex
@@ -20,31 +17,24 @@ RETRY_DELAY_SECONDS = 1
 app = Flask(__name__)
 CORS(app)
 
-# Load Firebase credentials from the JSON file
-with open('credential.json') as f:
-    firebase_cred = json.load(f)
-
-cred = credentials.Certificate(firebase_cred)
-
-firebase_admin.initialize_app(cred,{'databaseURL':'https://skincareapp-e9f8e-default-rtdb.firebaseio.com/'})
-
-ref=db.reference('/')
+# MongoDB setup
+client = MongoClient('mongodb+srv://admin:admin@cluster0.scytod8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+db = client.skincaredb
+users_collection = db.user_details
 
 translator = Translator()
 
-users = []
-preferred_language=""
 def time_now():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-@app.route('/create',methods=['POST'])
+@app.route('/create', methods=['POST'])
 def create():
-    data=request.json
+    data = request.json
     if data:
-        new_ref=ref.push(data)
-        return jsonify({'message':'dta created','key':new_ref.key}),201
+        result = users_collection.insert_one(data)
+        return jsonify({'message': 'Data created', 'id': str(result.inserted_id)}), 201
     else:
-        return "error"
+        return "error", 400
     
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -54,18 +44,16 @@ def signup():
         contact_number = user_data.get('contactNumber')
         
         # Check if user already exists
-        users = ref.get()
-        if users:
-            for user_id, user in users.items():
-                if isinstance(user, dict):
-                    if user.get('email') == email and user.get('contactNumber') == contact_number:
-                        return jsonify({'error': 'User already exists. Please login.'}), 400
+        existing_user = users_collection.find_one({'email': email, 'contactNumber': contact_number})
+        if existing_user:
+            return jsonify({'error': 'User already exists. Please login.'}), 400
         
         # Add new user data
-        ref.push(user_data)
+        users_collection.insert_one(user_data)
         return jsonify({'success': True}), 201
     else:
         return jsonify({'error': 'Invalid data format.'}), 400
+
 @app.route('/login', methods=['POST'])
 def login():
     login_data = request.get_json()
@@ -76,18 +64,16 @@ def login():
     if not email or not contact_number:
         return jsonify({'error': 'Email and contact number are required'}), 400
     
-    # Retrieve all users from the database
-    users = ref.get()
-    name=""
-    if users:
-        for user_id, user in users.items():
-            if isinstance(user, dict):
-                if user.get('email') == email and user.get('contactNumber') == contact_number:
-                    name=user.get('name')
-                    print(name)
-                    return jsonify({'success': True, 'message': 'Login successful', 'preferredLanguage': preferred_language,'name':name}), 200
-    return jsonify({'message': 'Email and Mobile Number is registered'}), 200
-
+    # Retrieve the user from the database
+    user = users_collection.find_one({'email': email, 'contactNumber': contact_number})
+    print(user)
+    print(users_collection)
+    print(db)
+    
+    if user:
+        name = user.get('name')
+        return jsonify({'success': True, 'message': 'Login successful', 'preferredLanguage': preferred_language, 'name': name}), 200
+    return jsonify({'message': 'Email and Mobile Number is not registered'}), 400
 
 # Register the /time route
 app.add_url_rule('/time', 'serve_time', serve_time)

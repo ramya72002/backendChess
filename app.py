@@ -10,15 +10,20 @@ from categories.skincaretypes import serve_scc, serve_bcc, serve_mem
 from categories.skincancerprevention import serve_sunsafety,serve_traditionalc,serve_uvindex
 from categories.common_desease import serve_additional, serve_infectious, serve_inflaauto, serve_hair, serve_pigmentary, serve_envdisorder
 from finddoctor.docdetails import get_docdetails1
+from dotenv import load_dotenv
+import os
  
 MAX_RETRIES = 3
 RETRY_DELAY_SECONDS = 1
 
 app = Flask(__name__)
 CORS(app)
+load_dotenv()
 
+# Get the MongoDB URI from the environment variable
+mongo_uri = os.getenv('MONGO_URI')
 # MongoDB setup
-client = MongoClient('mongodb+srv://admin:admin@cluster0.scytod8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+client = MongoClient(mongo_uri)
 db = client.skincaredb
 users_collection = db.user_details
 

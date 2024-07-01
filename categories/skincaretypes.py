@@ -3,8 +3,8 @@ import json
 
 def serve_scc():
     with open('./data/scc.json', 'r', encoding='utf-8') as json_file:
-        scc = json.load(json_file)
-    print({'tips': scc})
+        data = json.load(json_file)
+    scc = data.get("en", [])
     return jsonify({'tips': scc})
 
 def serve_bcc():

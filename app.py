@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime
-import requests
+import requests,json
 from bs4 import BeautifulSoup
 from googletrans import Translator
 from pymongo import MongoClient
@@ -116,6 +116,9 @@ def translate_text():
     data = request.get_json()
     content = data.get('content')
     target_language = data.get('language')
+    print("------------",data)
+    print(target_language)
+    print(content)
 
     if not content or not target_language:
         return jsonify({'error': 'Content and language are required'}), 400
@@ -129,6 +132,125 @@ def translate_text():
         return jsonify({'error': 'Translation error', 'details': str(re)}), 500
     except Exception as e:
         return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
+
+
+
+@app.route('/scctranslate', methods=['POST'])
+def translate_text_scct():
+    data = request.get_json()
+    target_language = data.get('language', 'en') 
+    with open('./data/scc.json', 'r', encoding='utf-8') as json_file:
+        data = json.load(json_file)
+    scc = data.get(target_language, [])
+    return jsonify({'tips': scc})
+
+
+@app.route('/bcctranslate', methods=['POST'])
+def translate_text_bcct():
+    data = request.get_json()
+    target_language = data.get('language', 'en') 
+    with open('./data/bcc.json', 'r', encoding='utf-8') as json_file:
+        data = json.load(json_file)
+    bcc = data.get(target_language, [])
+    return jsonify({'tips': bcc})
+
+@app.route('/memtranslatet', methods=['POST'])
+def translate_text_memt():
+    data = request.get_json()
+    target_language = data.get('language', 'en') 
+    with open('./data/melanoma.json', 'r', encoding='utf-8') as json_file:
+        data = json.load(json_file)
+    mem = data.get(target_language, [])
+    return jsonify({'tips': mem})
+
+
+
+@app.route('/sunsafetyt', methods=['POST'])
+def serve_sunsafetyt():
+    data = request.get_json()
+    target_language = data.get('language', 'en') 
+    with open('./data/sunsafety.json', 'r', encoding='utf-8') as json_file:
+        data = json.load(json_file)
+    mem = data.get(target_language, [])
+    return jsonify({'tips': mem})
+
+@app.route('/traditionalct', methods=['POST'])
+def serve_traditionalct():
+    data = request.get_json()
+    target_language = data.get('language', 'en') 
+    with open('./data/traditionalclothing.json', 'r', encoding='utf-8') as json_file:
+        data = json.load(json_file)
+    mem = data.get(target_language, [])
+    return jsonify({'tips': mem})
+
+@app.route('/uvindexdatat', methods=['POST'])
+def serve_uvindext():
+    data = request.get_json()
+    target_language = data.get('language', 'en') 
+    with open('./data/uvindex.json', 'r', encoding='utf-8') as json_file:
+        data = json.load(json_file)
+    mem = data.get(target_language, [])
+    return jsonify({'tips': mem})
+    
+@app.route('/additionalt', methods=['POST'])    
+def serve_additionalt():
+    data = request.get_json()
+    target_language = data.get('language', 'en')
+    with open('./data/additional.json', 'r', encoding='utf-8') as json_file:
+        data = json.load(json_file)
+    mem = data.get(target_language, [])
+    return jsonify({'tips': mem})
+
+@app.route('/infectioust', methods=['POST'])    
+def serve_infectioust():
+    data = request.get_json()
+    target_language = data.get('language', 'en')
+    print(data)
+    with open('./data/infectious.json', 'r', encoding='utf-8') as json_file:
+        data = json.load(json_file)
+    mem = data.get(target_language, [])
+    print(mem)
+    return jsonify({'tips': mem})
+
+@app.route('/inflaautot', methods=['POST'])    
+def serve_inflaautot():
+    data = request.get_json()
+    target_language = data.get('language', 'en')
+    print(data)
+    with open('./data/inflaauto.json', 'r', encoding='utf-8') as json_file:
+        data = json.load(json_file)
+    mem = data.get(target_language, [])
+    print(mem)
+    return jsonify({'tips': mem})
+
+@app.route('/hairt', methods=['POST'])    
+def serve_hairt():
+    data = request.get_json()
+    target_language = data.get('language', 'en')
+    with open('./data/hair.json', 'r', encoding='utf-8') as json_file:
+        data = json.load(json_file)
+    mem = data.get(target_language, [])
+    return jsonify({'tips': mem})
+
+@app.route('/pigmentaryt', methods=['POST'])    
+def serve_pigmentaryt():
+    data = request.get_json()
+    target_language = data.get('language', 'en')
+    with open('./data/pigmentary.json', 'r', encoding='utf-8') as json_file:
+        data = json.load(json_file)
+    mem = data.get(target_language, [])
+    return jsonify({'tips': mem})
+
+@app.route('/envdisordert', methods=['POST'])    
+def serve_envdisordert():
+    data = request.get_json()
+    target_language = data.get('language', 'en')
+    print(data)
+    with open('./data/envdisorder.json', 'r', encoding='utf-8') as json_file:
+        data = json.load(json_file)
+    mem = data.get(target_language, [])
+    print(mem)
+    return jsonify({'tips': mem})
 
 
 @app.route('/weather', methods=['POST'])
@@ -259,4 +381,4 @@ def get_cities():
     
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=80)

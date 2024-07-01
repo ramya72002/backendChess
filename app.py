@@ -236,7 +236,7 @@ def serve_hairt():
 def serve_pigmentaryt():
     data = request.get_json()
     target_language = data.get('language', 'en')
-    with open('./data/pigmentary.json', 'r', encoding='utf-8') as json_file:
+    with open('./data/Pigmentary.json', 'r', encoding='utf-8') as json_file:
         data = json.load(json_file)
     mem = data.get(target_language, [])
     return jsonify({'tips': mem})

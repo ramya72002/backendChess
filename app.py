@@ -57,23 +57,17 @@ def signup():
 @app.route('/login', methods=['POST'])
 def login():
     login_data = request.get_json()
-    email = login_data.get('email')
-    contact_number = login_data.get('contactNumber')
-    preferred_language = login_data.get('preferredLanguage')
-    
-    if not email or not contact_number:
-        return jsonify({'error': 'Email and contact number are required'}), 400
+    email = login_data.get('email') 
     
     # Retrieve the user from the database
-    user = users_collection.find_one({'email': email, 'contactNumber': contact_number})
+    user = users_collection.find_one({'email': email})
     print(user)
-    print(users_collection)
-    print(db)
+    
     
     if user:
         name = user.get('name')
-        return jsonify({'success': True, 'message': 'Login successful', 'preferredLanguage': preferred_language, 'name': name}), 200
-    return jsonify({'message': 'Email and Mobile Number is not registered'}), 400
+        return jsonify({'success': True, 'message': 'Login successful','name': name}), 200
+    return jsonify({'success': False,'message': 'Email and Mobile Number is not registered'}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80)

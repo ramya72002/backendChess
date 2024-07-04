@@ -1,0 +1,8 @@
+Flask
+flask-cors
+requests
+beautifulsoup4
+googletrans==4.0.0-rc1
+pymongo
+python-dotenv
+geopy

@@ -1,8 +1,9 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime
-from pymongo import MongoClient
+from pymongo import MongoClient,ReturnDocument
 from dotenv import load_dotenv
+from bson import ObjectId
 import os
  
 MAX_RETRIES = 3
@@ -68,6 +69,61 @@ def login():
         name = user.get('name')
         return jsonify({'success': True, 'message': 'Login successful','name': name}), 200
     return jsonify({'success': False,'message': 'Email and Mobile Number is not registered'}), 200
+
+@app.route('/getuserdetails', methods=['GET'])
+def get_user_details():
+    email = request.args.get('email')
+    
+    if not email:
+        return jsonify({'success': False, 'message': 'Email parameter is required'}), 400
+    
+    # Retrieve the user from the database
+    user = users_collection.find_one({'email': email})
+    
+    if user:
+        # Customize this to match your user schema
+        user_details = {
+            'name': user.get('name', ''),
+            'email': user.get('email',''),
+            'image':user.get('image',''),
+            # Add other fields as needed
+        }
+        return jsonify({'success': True, 'data': user_details}), 200
+    else:
+        return jsonify({'success': False, 'message': 'User not found'}), 404
+    
+@app.route('/imageupdate', methods=['POST'])
+def update_user_image():
+    data = request.get_json()
+    user_name = data.get('name')
+    image_url = data.get('image')  # Assuming 'image' is the key for the image URL
+    
+    if not user_name:
+        return jsonify({'success': False, 'message': 'name parameter is required'}), 400
+    
+    try:
+        # Update user's image in the database
+        user = users_collection.find_one_and_update(
+            {'name': user_name},
+            {'$set': {'image': image_url}},
+            return_document=ReturnDocument.AFTER
+        )
+
+        if user:
+            user_details = {
+                'name': user.get('name', ''),
+                'email': user.get('email', ''),
+                'image': user.get('image', ''),
+                # Add other fields as needed
+            }
+            return jsonify({'success': True, 'data': user_details}), 200
+        else:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80)

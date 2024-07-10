@@ -42,10 +42,11 @@ def signup():
     user_data = request.get_json()
     if user_data:
         email = user_data.get('email')
+        level = user_data.get('level')
         contact_number = user_data.get('contactNumber')
         
         # Check if user already exists
-        existing_user = users_collection.find_one({'email': email, 'contactNumber': contact_number})
+        existing_user = users_collection.find_one({'email': email, 'contactNumber': contact_number,'level':level})
         if existing_user:
             return jsonify({'error': 'User already exists. Please login.'}), 400
         
@@ -72,8 +73,7 @@ def login():
 
 @app.route('/getuserdetails', methods=['GET'])
 def get_user_details():
-    email = request.args.get('email')
-    level = request.args.get('level')
+    email = request.args.get('email') 
     
     if not email:
         return jsonify({'success': False, 'message': 'Email parameter is required'}), 400
@@ -82,16 +82,13 @@ def get_user_details():
     user = users_collection.find_one({'email': email})
     
     if user:
-        # Update the user's level in the database if not already present
-        if not user.get('level'):
-            users_collection.update_one({'email': email}, {'$set': {'level': level}})
         
         # Customize this to match your user schema
         user_details = {
             'name': user.get('name', ''),
             'email': user.get('email', ''),
             'image': user.get('image', ''),
-            'level': user.get('level', level),  # Include the level in the response
+            'level': user.get('level', 'level1'),  # Include the level in the response
             # Add other fields as needed
         }
         return jsonify({'success': True, 'data': user_details}), 200

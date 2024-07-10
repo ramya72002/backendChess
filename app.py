@@ -73,6 +73,7 @@ def login():
 @app.route('/getuserdetails', methods=['GET'])
 def get_user_details():
     email = request.args.get('email')
+    level = request.args.get('level')
     
     if not email:
         return jsonify({'success': False, 'message': 'Email parameter is required'}), 400
@@ -81,16 +82,22 @@ def get_user_details():
     user = users_collection.find_one({'email': email})
     
     if user:
+        # Update the user's level in the database if not already present
+        if not user.get('level'):
+            users_collection.update_one({'email': email}, {'$set': {'level': level}})
+        
         # Customize this to match your user schema
         user_details = {
             'name': user.get('name', ''),
-            'email': user.get('email',''),
-            'image':user.get('image',''),
+            'email': user.get('email', ''),
+            'image': user.get('image', ''),
+            'level': user.get('level', level),  # Include the level in the response
             # Add other fields as needed
         }
         return jsonify({'success': True, 'data': user_details}), 200
     else:
         return jsonify({'success': False, 'message': 'User not found'}), 404
+
     
 @app.route('/imageupdate', methods=['POST'])
 def update_user_image():
@@ -114,6 +121,7 @@ def update_user_image():
                 'name': user.get('name', ''),
                 'email': user.get('email', ''),
                 'image': user.get('image', ''),
+                'level':user.get('level',''),
                 # Add other fields as needed
             }
             return jsonify({'success': True, 'data': user_details}), 200

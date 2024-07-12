@@ -1,25 +1,28 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime
-from pymongo import MongoClient,ReturnDocument
+from pymongo import MongoClient, ReturnDocument
 from dotenv import load_dotenv
 from bson import ObjectId
 import os
- 
+
 MAX_RETRIES = 3
 RETRY_DELAY_SECONDS = 1
 
 app = Flask(__name__)
-CORS(app)
+
+# Allow requests from specific origins
+CORS(app, origins=["https://chessdemo-l3qrzgj5q-ramyas-projects-4cb2348e.vercel.app","http://localhost:3000"])
+
 load_dotenv()
 
 # Get the MongoDB URI from the environment variable
 mongo_uri = os.getenv('MONGO_URI')
+
 # MongoDB setup
 client = MongoClient(mongo_uri)
 db = client.chessDb
 users_collection = db.users
-
 
 @app.route('/')
 def home():

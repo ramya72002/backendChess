@@ -129,6 +129,40 @@ def update_user_image():
         return jsonify({'success': False, 'message': str(e)}), 500
 
     
+@app.route('/updatelevel', methods=['POST'])
+def update_user_level():
+    data = request.get_json()
+    user_name = data.get('name')
+    user_level = data.get('level')  # Assuming 'level' is the key for the level
+    
+    if not user_name:
+        return jsonify({'success': False, 'message': 'name parameter is required'}), 400
+    
+    if user_level is None:
+        return jsonify({'success': False, 'message': 'level parameter is required'}), 400
+    
+    try:
+        # Update user's level in the database
+        user = users_collection.find_one_and_update(
+            {'name': user_name},
+            {'$set': {'level': user_level}},
+            return_document=ReturnDocument.AFTER
+        )
+
+        if user:
+            user_details = {
+                'name': user.get('name', ''),
+                'email': user.get('email', ''),
+                'image': user.get('image', ''),
+                'level': user.get('level', ''),
+                # Add other fields as needed
+            }
+            return jsonify({'success': True, 'data': user_details}), 200
+        else:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80)

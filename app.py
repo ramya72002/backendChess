@@ -71,7 +71,7 @@ def login():
     
     if user:
         name = user.get('name')
-        return jsonify({'success': True, 'message': 'Login successful','name': name}), 200
+        return jsonify({'success': True, 'message': 'Login successfull','name': name}), 200
     return jsonify({'success': False,'message': 'Email and Mobile Number is not registered'}), 200
 
 @app.route('/getuserdetails', methods=['GET'])
@@ -92,6 +92,7 @@ def get_user_details():
             'email': user.get('email', ''),
             'image': user.get('image', ''),
             'level': user.get('level', 'level1'),  # Include the level in the response
+            'puzzle_score': user.get('puzzle_score', ''),
             # Add other fields as needed
         }
         return jsonify({'success': True, 'data': user_details}), 200
@@ -158,6 +159,49 @@ def update_user_level():
                 'email': user.get('email', ''),
                 'image': user.get('image', ''),
                 'level': user.get('level', ''),
+                # Add other fields as needed
+            }
+            return jsonify({'success': True, 'data': user_details}), 200
+        else:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/updatepuzzlescore', methods=['POST'])
+def update_puzzle_score():
+    data = request.get_json()
+    email = data.get('email')
+    addscoretopuzzle = data.get('addscoretopuzzle')
+    
+    if not email:
+        return jsonify({'success': False, 'message': 'email parameter is required'}), 400
+    
+    if addscoretopuzzle is None:
+        return jsonify({'success': False, 'message': 'addscoretopuzzle parameter is required'}), 400
+    
+    try:
+        # Search for the user by email
+        user = users_collection.find_one({'email': email})
+        
+        if user:
+            # Check if "puzzle score" field exists and update it
+            puzzle_score = user.get('puzzle_score', 0)  # Default to 0 if not present
+            new_puzzle_score = puzzle_score + addscoretopuzzle
+            
+            updated_user = users_collection.find_one_and_update(
+                {'email': email},
+                {'$set': {'puzzle_score': new_puzzle_score}},
+                return_document=ReturnDocument.AFTER
+            )
+            
+            user_details = {
+                'name': updated_user.get('name', ''),
+                'email': updated_user.get('email', ''),
+                'image': updated_user.get('image', ''),
+                'level': updated_user.get('level', ''),
+                'puzzle_score': updated_user.get('puzzle_score', 0),
                 # Add other fields as needed
             }
             return jsonify({'success': True, 'data': user_details}), 200

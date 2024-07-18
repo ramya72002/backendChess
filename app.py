@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime
-from pymongo import MongoClient, ReturnDocument
+from pymongo import DESCENDING, MongoClient, ReturnDocument
 from dotenv import load_dotenv
 from bson import ObjectId
 import os
@@ -52,7 +52,7 @@ def add_session():
 def get_sessions():
     try:
         # Retrieve all documents from the admin_db collection
-        sessions = list(admin_collection.find())
+        sessions = list(admin_collection.find().sort('date', DESCENDING))
         
         # Convert ObjectId to string for JSON serialization
         for session in sessions:
@@ -243,5 +243,5 @@ def update_puzzle_score():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=80)
 

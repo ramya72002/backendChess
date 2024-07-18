@@ -22,6 +22,7 @@ mongo_uri = os.getenv('MONGO_URI')
 # MongoDB setup
 client = MongoClient(mongo_uri)
 db = client.chessDb
+admin_collection = db.admin_db 
 users_collection = db.users
 
 @app.route('/')
@@ -31,6 +32,36 @@ def home():
 def time_now():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+@app.route('/add-session', methods=['POST'])
+def add_session():
+    data = request.json
+
+    # Validate data
+    if not all(key in data for key in ('date', 'time', 'coach_name', 'session_link')):
+        return jsonify({"error": "Invalid data format"}), 400
+
+    # Insert data into the admin_db collection
+    result = admin_collection.insert_one(data)
+    if result.acknowledged:
+        return jsonify({"message": "Session added successfully", "id": str(result.inserted_id)}), 201
+    else:
+        return jsonify({"error": "Failed to add session"}), 500
+
+
+@app.route('/sessions', methods=['GET'])
+def get_sessions():
+    try:
+        # Retrieve all documents from the admin_db collection
+        sessions = list(admin_collection.find())
+        
+        # Convert ObjectId to string for JSON serialization
+        for session in sessions:
+            session['_id'] = str(session['_id'])
+
+        return jsonify(sessions), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 @app.route('/create', methods=['POST'])
 def create():
     data = request.json
@@ -212,5 +243,5 @@ def update_puzzle_score():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=80)
 

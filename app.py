@@ -62,6 +62,28 @@ def get_sessions():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+
+@app.route('/del-session', methods=['DELETE'])
+def delete_session():
+    data = request.json
+    
+    # Validate data
+    if not all(key in data for key in ('date', 'time')):
+        return jsonify({"error": "Date and time must be provided to delete a session"}), 400
+    
+    try:
+        # Find and delete the session based on date and time
+        result = admin_collection.delete_one({"date": data['date'], "time": data['time']})
+        
+        if result.deleted_count == 1:
+            return jsonify({"message": "Session deleted successfully"}), 200
+        else:
+            return jsonify({"error": "Session not found"}), 404
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    
 @app.route('/create', methods=['POST'])
 def create():
     data = request.json

@@ -315,5 +315,5 @@ def update_puzzle_score():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
+    app.run()
 

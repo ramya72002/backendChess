@@ -14,7 +14,7 @@ RETRY_DELAY_SECONDS = 1
 app = Flask(__name__)
 
 # Allow requests from specific origins
-CORS(app, origins=["https://chess-main.vercel.app/","https://chessdemo-alpha.vercel.app","https://chessdemo-l3qrzgj5q-ramyas-projects-4cb2348e.vercel.app","http://localhost:3000"])
+CORS(app, origins=["https://chess-main.vercel.app/","https://chessdemo-alpha.vercel.app","https://chessdemo-l3qrzgj5q-ramyas-projects-4cb2348e.vercel.app","https://chess-main-git-main-ramyas-projects-4cb2348e.vercel.app/","http://localhost:3000"])
 
 load_dotenv()
 

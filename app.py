@@ -127,7 +127,47 @@ def get_sessions():
             return jsonify({"error": "No sessions found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+@app.route('/tornaments', methods=['GET'])
+def get_tournaments():
+    try:
+        # Retrieve documents and extract the 'tournaments' field from the first document
+        document = admin_collection.find_one({}, {'_id': 0, 'tournaments': 1})
+        
+        if document and 'tournaments' in document:
+            return jsonify(document['tournaments']), 200
+        else:
+            return jsonify({"error": "No tournaments found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/update-tournament', methods=['PUT'])
+def update_tournament():
+    try:
+        data = request.json
+        tournament_type = data.get('type')
+        tournament_details = data.get('tournament')
+
+        if not tournament_type or not tournament_details:
+            return jsonify({"error": "Type and tournament details are required"}), 400
+        
+        # Find the document and update the specified tournament
+        result = admin_collection.update_one(
+            {"tournaments.type": tournament_type},
+            {
+                "$set": {
+                    "tournaments.$": tournament_details
+                }
+            }
+        )
+
+        if result.modified_count == 0:
+            return jsonify({"error": "No tournament found to update"}), 404
+        
+        return jsonify({"message": "Tournament updated successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/del-session', methods=['DELETE'])
 def delete_session():

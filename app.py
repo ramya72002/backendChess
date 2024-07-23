@@ -3,7 +3,7 @@ from flask_cors import CORS
 from datetime import datetime
 from pymongo import DESCENDING, MongoClient, ReturnDocument
 from dotenv import load_dotenv
-import os
+import os,re
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -38,14 +38,31 @@ def time_now():
 def add_session():
     data = request.json
 
-    # Validate data
-    if not all(key in data for key in ('date', 'time', 'coach_name', 'session_link')):
-        return jsonify({"error": "Invalid data format"}), 400
+    # Validate required fields
+    required_fields = ['date', 'time', 'coach_name', 'session_link']
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Missing required fields"}), 400
 
-    # Insert data into the admin_db collection
-    result = admin_collection.insert_one(data)
-    if result.acknowledged:
-        return jsonify({"message": "Session added successfully", "id": str(result.inserted_id)}), 201
+    # Validate session link format (basic check for HTTP/HTTPS)
+    if not re.match(r'^https?://', data['session_link']):
+        return jsonify({"error": "Invalid session link format"}), 400
+
+    # Prepare the session data
+    session_data = {
+        "date": data["date"],
+        "time": data["time"],
+        "coach_name": data["coach_name"],
+        "session_link": data["session_link"]
+    }
+
+    # Update the document in the collection
+    result = admin_collection.update_one(
+        {},  # You can specify a filter if needed
+        {"$push": {"sessions": session_data}}
+    )
+    
+    if result.modified_count > 0 or result.upserted_id:
+        return jsonify({"message": "Session added successfully"}), 201
     else:
         return jsonify({"error": "Failed to add session"}), 500
 @app.route('/send-email', methods=['POST'])
@@ -101,14 +118,13 @@ def send_email():
 @app.route('/sessions', methods=['GET'])
 def get_sessions():
     try:
-        # Retrieve all documents from the admin_db collection
-        sessions = list(admin_collection.find().sort('date', DESCENDING))
+        # Retrieve documents and extract the 'sessions' field from the first document
+        document = admin_collection.find_one({}, {'_id': 0, 'sessions': 1})
         
-        # Convert ObjectId to string for JSON serialization
-        for session in sessions:
-            session['_id'] = str(session['_id'])
-
-        return jsonify(sessions), 200
+        if document and 'sessions' in document:
+            return jsonify(document['sessions']), 200
+        else:
+            return jsonify({"error": "No sessions found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
@@ -116,20 +132,23 @@ def get_sessions():
 @app.route('/del-session', methods=['DELETE'])
 def delete_session():
     data = request.json
-    
+
     # Validate data
     if not all(key in data for key in ('date', 'time')):
         return jsonify({"error": "Date and time must be provided to delete a session"}), 400
-    
+
     try:
-        # Find and delete the session based on date and time
-        result = admin_collection.delete_one({"date": data['date'], "time": data['time']})
-        
-        if result.deleted_count == 1:
+        # Remove the session from the sessions field
+        result = admin_collection.update_one(
+            {"sessions": {"$elemMatch": {"date": data['date'], "time": data['time']}}},
+            {"$pull": {"sessions": {"date": data['date'], "time": data['time']}}}
+        )
+
+        if result.modified_count > 0:
             return jsonify({"message": "Session deleted successfully"}), 200
         else:
             return jsonify({"error": "Session not found"}), 404
-    
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

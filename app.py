@@ -34,6 +34,36 @@ def home():
 def time_now():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+
+@app.route('/studentList', methods=['GET'])
+def get_studentList():
+    try:
+        # Retrieve all documents and convert cursor to a list
+        documents = list(users_collection.find({}, {'_id': 0}))
+        
+        if documents:
+            return jsonify(documents), 200
+        else:
+            return jsonify({"error": "No records found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/del-student', methods=['DELETE'])
+def delete_student():
+    try:
+        email = request.json.get('email')
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+
+        result = users_collection.delete_one({"email": email})
+        
+        if result.deleted_count > 0:
+            return jsonify({"message": "Student record deleted successfully"}), 200
+        else:
+            return jsonify({"error": "Student record not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/add-session', methods=['POST'])
 def add_session():
     data = request.json
@@ -379,5 +409,5 @@ def update_puzzle_score():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=80)
 

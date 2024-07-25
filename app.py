@@ -146,28 +146,33 @@ def update_tournament():
     try:
         data = request.json
         tournament_type = data.get('type')
-        tournament_details = data.get('tournament')
+        tournament_updates = data.get('tournament')
 
-        if not tournament_type or not tournament_details:
+        if not tournament_type or not tournament_updates:
             return jsonify({"error": "Type and tournament details are required"}), 400
-        
-        # Find the document and update the specified tournament
+
+        # Prepare the update dictionary
+        update_fields = {f"tournaments.$.{key}": value for key, value in tournament_updates.items() if value is not None}
+
+        if not update_fields:
+            return jsonify({"error": "No valid fields to update"}), 400
+
+        # Update the specified tournament
         result = admin_collection.update_one(
             {"tournaments.type": tournament_type},
             {
-                "$set": {
-                    "tournaments.$": tournament_details
-                }
+                "$set": update_fields
             }
         )
 
         if result.modified_count == 0:
-            return jsonify({"error": "No tournament found to update"}), 404
-        
+            return jsonify({"error": "No tournament found to update or no changes made"}), 404
+
         return jsonify({"message": "Tournament updated successfully"}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/del-session', methods=['DELETE'])
 def delete_session():
@@ -374,5 +379,5 @@ def update_puzzle_score():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
+    app.run()
 

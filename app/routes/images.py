@@ -78,7 +78,7 @@ def image_fileid_get():
         file_id = data['file_id']
         
         file = fs.get(ObjectId(file_id))
-        return send_file(BytesIO(file.read()), mimetype=file.content_type, as_attachment=False, attachment_filename=file.filename)
+        return send_file(BytesIO(file.read()), mimetype=file.content_type, as_attachment=False, download_name=file.filename)
     except errors.PyMongoError as e:
         return jsonify({'error': str(e)}), 500
     except KeyError:

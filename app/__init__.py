@@ -10,14 +10,7 @@ def create_app():
     app = Flask(__name__)
 
     # Allow requests from specific origins
-    CORS(app, origins=[
-        "https://chess-main.vercel.app",
-        "https://chessdemo-alpha.vercel.app",
-        "https://chessdemo-l3qrzgj5q-ramyas-projects-4cb2348e.vercel.app",
-        "https://chess-main-git-main-ramyas-projects-4cb2348e.vercel.app",
-        "http://localhost:3000",
-        "https://chessdemo-alpha.vercel.app/admin_image_puzzles"
-    ])
+    CORS(app, origins="*")
 
     from app.database import init_db
     init_db(app)

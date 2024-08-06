@@ -23,11 +23,13 @@ db = client.chessDb
 users_collection = db.users
 fs = GridFS(db)
 
+# Upload images with a title
 @app.route('/upload', methods=['POST'])
 def upload_image():
-    if 'images' not in request.files:
-        return jsonify({'error': 'No images part in the request'}), 400
+    if 'images' not in request.files or 'title' not in request.form:
+        return jsonify({'error': 'No images or title part in the request'}), 400
 
+    title = request.form['title']
     files = request.files.getlist('images')
     file_ids = []
     for file in files:
@@ -37,23 +39,53 @@ def upload_image():
         except errors.PyMongoError as e:
             return jsonify({'error': str(e)}), 500
 
+    # Store the set of images with the title in a separate collection
+    try:
+        db.image_sets.insert_one({
+            'title': title,
+            'file_ids': file_ids
+        })
+    except errors.PyMongoError as e:
+        return jsonify({'error': str(e)}), 500
+
     return jsonify({'message': 'Images uploaded successfully', 'file_ids': file_ids}), 200
 
-@app.route('/get', methods=['GET'])
-def get_images():
+# Get images by title
+@app.route('/images/<title>', methods=['GET'])
+def get_images_by_title(title):
     try:
-        files = fs.find().sort('_id', -1).limit(5)  # Limit to the last 5 uploads
+        image_set = db.image_sets.find_one({'title': title})
+        if not image_set:
+            return jsonify({'error': 'No images found with the given title'}), 404
+
         image_data = []
-        for file in files:
+        for file_id in image_set['file_ids']:
+            file = fs.get(ObjectId(file_id))
             image_data.append({
-                'id': str(file._id),  # Convert ObjectId to string
+                'id': file_id,  # Already a string
                 'filename': file.filename,
-                'url': f"/image/{file._id}"
+                'url': f"/image/{file_id}"
             })
         return jsonify({'images': image_data}), 200
     except errors.PyMongoError as e:
         return jsonify({'error': str(e)}), 500
 
+# Existing get images route (modified for image sets)
+@app.route('/get', methods=['GET'])
+def get_images():
+    try:
+        image_sets = db.image_sets.find().sort('_id', -1).limit(6)  # Limit to the last 6 image sets
+        sets_data = []
+        for image_set in image_sets:
+            sets_data.append({
+                'title': image_set['title'],
+                'file_ids': image_set['file_ids']
+            })
+        return jsonify({'image_sets': sets_data}), 200
+    except errors.PyMongoError as e:
+        return jsonify({'error': str(e)}), 500
+
+# Get individual image by ID
 @app.route('/image/<file_id>', methods=['GET'])
 def get_image(file_id):
     try:
@@ -61,7 +93,6 @@ def get_image(file_id):
         return send_file(BytesIO(file.read()), mimetype=file.content_type, as_attachment=False, attachment_filename=file.filename)
     except errors.PyMongoError as e:
         return jsonify({'error': str(e)}), 500
-
 
 
 @app.route('/')
@@ -121,4 +152,4 @@ def login():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=80)

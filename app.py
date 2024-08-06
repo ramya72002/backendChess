@@ -48,12 +48,21 @@ def upload_image():
         except errors.PyMongoError as e:
             return jsonify({'error': str(e)}), 500
 
-    # Store the set of images with the title in a separate collection
+    # Check if title already exists
     try:
-        db.image_sets.insert_one({
-            'title': title,
-            'file_ids': file_ids
-        })
+        existing_image_set = db.image_sets.find_one({'title': title})
+        if existing_image_set:
+            # Append new file_ids to the existing set
+            db.image_sets.update_one(
+                {'title': title},
+                {'$push': {'file_ids': {'$each': file_ids}}}
+            )
+        else:
+            # Create a new image set
+            db.image_sets.insert_one({
+                'title': title,
+                'file_ids': file_ids
+            })
     except errors.PyMongoError as e:
         return jsonify({'error': str(e)}), 500
 

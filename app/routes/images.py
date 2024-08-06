@@ -75,7 +75,7 @@ def get_images():
 def image_fileid_get():
     try:
         data = request.get_json()
-        file_id = data['file_i d']
+        file_id = data['file_id']
         
         file = fs.get(ObjectId(file_id))
         return send_file(BytesIO(file.read()), mimetype=file.content_type, as_attachment=False, attachment_filename=file.filename)

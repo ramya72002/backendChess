@@ -71,10 +71,15 @@ def get_images():
     except errors.PyMongoError as e:
         return jsonify({'error': str(e)}), 500
 
-@images_bp.route('/image/<file_id>', methods=['GET'])
-def get_image(file_id):
+@images_bp.route('/image_get_fileid', methods=['POST'])
+def image_fileid_get():
     try:
+        data = request.get_json()
+        file_id = data['file_i d']
+        
         file = fs.get(ObjectId(file_id))
         return send_file(BytesIO(file.read()), mimetype=file.content_type, as_attachment=False, attachment_filename=file.filename)
     except errors.PyMongoError as e:
         return jsonify({'error': str(e)}), 500
+    except KeyError:
+        return jsonify({'error': 'File ID is required'}), 400

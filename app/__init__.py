@@ -15,7 +15,8 @@ def create_app():
         "https://chessdemo-alpha.vercel.app",
         "https://chessdemo-l3qrzgj5q-ramyas-projects-4cb2348e.vercel.app",
         "https://chess-main-git-main-ramyas-projects-4cb2348e.vercel.app",
-        "http://localhost:3000"
+        "http://localhost:3000",
+        "https://chessdemo-alpha.vercel.app/admin_image_puzzles"
     ])
 
     from app.database import init_db

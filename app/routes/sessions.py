@@ -14,8 +14,15 @@ def add_session():
             return jsonify({'error': f"'{field}' is required"}), 400
 
     try:
-        admin_collection.insert_one(data)
-        return jsonify({'message': 'Session added successfully'}), 201
+        # Add the new session to the first document in the collection
+        result = admin_collection.update_one(
+            {},  # match the first document
+            {'$push': {'sessions': data}}
+        )
+        if result.modified_count == 1:
+            return jsonify({'message': 'Session added successfully'}), 201
+        else:
+            return jsonify({'error': 'No document was updated'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

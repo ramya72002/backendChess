@@ -23,19 +23,17 @@ def signup():
         return jsonify({'error': 'Invalid data format.'}), 400
 
 
-@users_bp.route('/signin', methods=['POST'])
+@users_bp.route('/login', methods=['POST'])
 def signin():
-    data = request.json
-    required_fields = ['email', 'password']
-    for field in required_fields:
-        if field not in data:
-            return jsonify({'error': f"'{field}' is required"}), 400
-
-    try:
-        user = users_collection.find_one({'email': data['email'], 'password': data['password']})
-        if user:
-            return jsonify({'message': 'Sign-in successful', 'user': user}), 200
-        else:
-            return jsonify({'error': 'Invalid credentials'}), 401
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    login_data = request.get_json()
+    email = login_data.get('email') 
+    
+    # Retrieve the user from the database
+    user = users_collection.find_one({'email': email})
+    print(user)
+    
+    
+    if user:
+        name = user.get('name')
+        return jsonify({'success': True, 'message': 'Login successfull','name': name}), 200
+    return jsonify({'success': False,'message': 'Email and Mobile Number is not registered'}), 200

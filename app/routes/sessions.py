@@ -36,13 +36,25 @@ def view_sessions():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@sessions_bp.route('/del-sessions/<session_id>', methods=['DELETE'])
-def delete_session(session_id):
+@sessions_bp.route('/del-sessions', methods=['DELETE'])
+def delete_session():
+    data = request.json
+
+    # Validate data
+    if not all(key in data for key in ('date', 'time')):
+        return jsonify({"error": "Date and time must be provided to delete a session"}), 400
+
     try:
-        result = admin_collection.delete_one({'_id': ObjectId(session_id)})
-        if result.deleted_count > 0:
-            return jsonify({'message': 'Session deleted successfully'}), 200
+        # Remove the session from the sessions field
+        result = admin_collection.update_one(
+            {"sessions": {"$elemMatch": {"date": data['date'], "time": data['time']}}},
+            {"$pull": {"sessions": {"date": data['date'], "time": data['time']}}}
+        )
+
+        if result.modified_count > 0:
+            return jsonify({"message": "Session deleted successfully"}), 200
         else:
-            return jsonify({'error': 'Session not found'}), 404
+            return jsonify({"error": "Session not found"}), 404
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500

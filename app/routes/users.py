@@ -5,17 +5,23 @@ users_bp = Blueprint('users', __name__)
 
 @users_bp.route('/signup', methods=['POST'])
 def signup():
-    data = request.json
-    required_fields = ['email', 'password', 'name', 'level']
-    for field in required_fields:
-        if field not in data:
-            return jsonify({'error': f"'{field}' is required"}), 400
+    user_data = request.get_json()
+    if user_data:
+        email = user_data.get('email')
+        level = user_data.get('level')
+        contact_number = user_data.get('contactNumber')
+        
+        # Check if user already exists
+        existing_user = users_collection.find_one({'email': email, 'contactNumber': contact_number,'level':level})
+        if existing_user:
+            return jsonify({'error': 'User already exists. Please login.'}), 400
+        
+        # Add new user data
+        users_collection.insert_one(user_data)
+        return jsonify({'success': True}), 201
+    else:
+        return jsonify({'error': 'Invalid data format.'}), 400
 
-    try:
-        users_collection.insert_one(data)
-        return jsonify({'message': 'User signed up successfully'}), 201
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 @users_bp.route('/signin', methods=['POST'])
 def signin():

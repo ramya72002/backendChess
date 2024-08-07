@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from pymongo import ReturnDocument
 from app.database import users_collection
 
 users_bp = Blueprint('users', __name__)
@@ -61,3 +62,36 @@ def get_user_details():
         return jsonify({'success': True, 'data': user_details}), 200
     else:
         return jsonify({'success': False, 'message': 'User not found'}), 404
+    
+
+@users_bp.route('/imageupdate', methods=['POST'])
+def update_user_image():
+    data = request.get_json()
+    user_name = data.get('name')
+    image_url = data.get('image')  # Assuming 'image' is the key for the image URL
+    
+    if not user_name:
+        return jsonify({'success': False, 'message': 'name parameter is required'}), 400
+    
+    try:
+        # Update user's image in the database
+        user = users_collection.find_one_and_update(
+            {'name': user_name},
+            {'$set': {'image': image_url}},
+            return_document=ReturnDocument.AFTER
+        )
+
+        if user:
+            user_details = {
+                'name': user.get('name', ''),
+                'email': user.get('email', ''),
+                'image': user.get('image', ''),
+                'level':user.get('level',''),
+                # Add other fields as needed
+            }
+            return jsonify({'success': True, 'data': user_details}), 200
+        else:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500

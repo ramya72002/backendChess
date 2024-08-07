@@ -18,7 +18,7 @@ def add_session():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@sessions_bp.route('/view-sessions', methods=['GET'])
+@sessions_bp.route('/sessions', methods=['GET'])
 def view_sessions():
     try:
         sessions = list(admin_collection.find())

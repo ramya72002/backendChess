@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.database import db
+from app.database import admin_collection
 from bson import ObjectId
 from pymongo import errors
 
@@ -20,7 +20,7 @@ def create_tournament():
             'type': data['type'],
             'description': data['description']
         }
-        result = db.tournaments.insert_one(tournament)
+        result = admin_collection.insert_one(tournament)
         return jsonify({'message': 'Tournament created successfully', 'id': str(result.inserted_id)}), 201
     except errors.PyMongoError as e:
         return jsonify({'error': str(e)}), 500
@@ -28,7 +28,7 @@ def create_tournament():
 @tournaments_bp.route('/tournaments/<tournament_id>', methods=['GET'])
 def get_tournament(tournament_id):
     try:
-        tournament = db.tournaments.find_one({'_id': ObjectId(tournament_id)})
+        tournament = admin_collection.find_one({'_id': ObjectId(tournament_id)})
         if not tournament:
             return jsonify({'error': 'Tournament not found'}), 404
         tournament['_id'] = str(tournament['_id'])
@@ -39,7 +39,7 @@ def get_tournament(tournament_id):
 @tournaments_bp.route('/tournaments', methods=['GET'])
 def get_tournaments():
     try:
-        tournaments = list(db.tournaments.find())
+        tournaments = list(admin_collection.find())
         for tournament in tournaments:
             tournament['_id'] = str(tournament['_id'])
         return jsonify(tournaments), 200
@@ -55,7 +55,7 @@ def update_tournament(tournament_id):
             update_fields[field] = data[field]
 
     try:
-        result = db.tournaments.update_one({'_id': ObjectId(tournament_id)}, {'$set': update_fields})
+        result = admin_collection.update_one({'_id': ObjectId(tournament_id)}, {'$set': update_fields})
         if result.matched_count > 0:
             return jsonify({'message': 'Tournament updated successfully'}), 200
         else:
@@ -66,7 +66,7 @@ def update_tournament(tournament_id):
 @tournaments_bp.route('/tournaments/<tournament_id>', methods=['DELETE'])
 def delete_tournament(tournament_id):
     try:
-        result = db.tournaments.delete_one({'_id': ObjectId(tournament_id)})
+        result = admin_collection.delete_one({'_id': ObjectId(tournament_id)})
         if result.deleted_count > 0:
             return jsonify({'message': 'Tournament deleted successfully'}), 200
         else:

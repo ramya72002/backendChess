@@ -83,3 +83,48 @@ def image_fileid_get():
         return jsonify({'error': str(e)}), 500
     except KeyError:
         return jsonify({'error': 'File ID is required'}), 400
+
+
+@images_bp.route('/delete-arena-title', methods=['DELETE'])
+def delete_images():
+    try:
+        data = request.json
+        title = data.get('title')
+
+        if not title:
+            return jsonify({'error': 'Title is required'}), 400
+
+        # Find the image set by title
+        image_set = db.image_sets.find_one({'title': title})
+        if not image_set:
+            return jsonify({'error': 'No image set found with the specified title'}), 404
+
+        file_ids = image_set.get('file_ids', [])
+
+        # Loop over each file_id and delete related records from fs.files and fs.chunks
+        for file_id in file_ids:
+            try:
+                file_id_obj = ObjectId(file_id)
+                
+                # Delete the file document from fs.files
+                fs_files_delete_result = db.fs.files.delete_one({'_id': file_id_obj})
+                
+                if fs_files_delete_result.deleted_count == 0:
+                    return jsonify({'error': f'File with id {file_id} not found in fs.files'}), 404
+                
+                # Delete the related chunks from fs.chunks
+                fs_chunks_delete_result = db.fs.chunks.delete_many({'files_id': file_id_obj})
+
+            except errors.PyMongoError as e:
+                return jsonify({'error': f'Error deleting file or chunks with id {file_id}: {str(e)}'}), 500
+
+        # Clear the file_ids in the image set document
+        db.image_sets.update_one({'_id': image_set['_id']}, {'$set': {'file_ids': []}})
+
+        return jsonify({'message': f'Files and chunks related to title "{title}" have been deleted successfully, and file_ids have been cleared.'}), 200
+
+    except errors.PyMongoError as e:
+        return jsonify({'error': str(e)}), 500
+
+    except Exception as e:
+        return jsonify({'error': f'An unexpected error occurred: {str(e)}'}), 500

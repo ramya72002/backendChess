@@ -24,6 +24,39 @@ def create_tournament():
         return jsonify({'message': 'Tournament created successfully', 'id': str(result.inserted_id)}), 201
     except errors.PyMongoError as e:
         return jsonify({'error': str(e)}), 500
+    
+@tournaments_bp.route('/update-tournament', methods=['PUT'])
+def update_tournament1():
+    try:
+        data = request.json
+        tournament_type = data.get('type')
+        tournament_updates = data.get('tournament')
+
+        if not tournament_type or not tournament_updates:
+            return jsonify({"error": "Type and tournament details are required"}), 400
+
+        # Prepare the update dictionary
+        update_fields = {f"tournaments.$.{key}": value for key, value in tournament_updates.items() if value is not None}
+
+        if not update_fields:
+            return jsonify({"error": "No valid fields to update"}), 400
+
+        # Update the specified tournament
+        result = admin_collection.update_one(
+            {"tournaments.type": tournament_type},
+            {
+                "$set": update_fields
+            }
+        )
+
+        if result.modified_count == 0:
+            return jsonify({"error": "No tournament found to update or no changes made"}), 404
+
+        return jsonify({"message": "Tournament updated successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @tournaments_bp.route('/tournaments/<tournament_id>', methods=['GET'])
 def get_tournament(tournament_id):

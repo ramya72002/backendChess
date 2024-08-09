@@ -23,6 +23,7 @@ def create_app():
     from app.routes.email import email_bp
     from app.routes.tournaments import tournaments_bp
     from app.routes.users import users_bp
+    from app.routes.upcomingActivities import upcomming_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(images_bp)
@@ -31,5 +32,6 @@ def create_app():
     app.register_blueprint(email_bp)
     app.register_blueprint(tournaments_bp)
     app.register_blueprint(users_bp)
+    app.register_blueprint(upcomming_bp)
 
     return app

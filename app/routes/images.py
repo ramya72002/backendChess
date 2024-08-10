@@ -126,6 +126,7 @@ def delete_images():
         if not title or not level:
             return jsonify({'error': 'Title and level are required'}), 400
 
+        # Find the image set to be deleted
         image_set = db.image_sets.find_one({'title': title, 'level': level})
         if not image_set:
             return jsonify({'error': 'No image set found with the specified title'}), 404
@@ -149,14 +150,17 @@ def delete_images():
             except errors.PyMongoError as e:
                 return jsonify({'error': f'Error deleting file or chunks with id {file_id}: {str(e)}'}), 500
 
-        # Clear the file_ids in the image set document
-        db.image_sets.update_one({'_id': image_set['_id']}, {'$set': {'file_ids': []}})
+        # Delete the entire image set document
+        delete_result = db.image_sets.delete_one({'title': title, 'level': level})
+        if delete_result.deleted_count == 0:
+            return jsonify({'error': 'Failed to delete the image set document'}), 500
 
-        return jsonify({'message': f'Files and chunks related to title "{title}" have been deleted successfully, and file_ids have been cleared.'}), 200
+        return jsonify({'message': f'Files, chunks, and image set related to title "{title}" have been deleted successfully.'}), 200
 
     except errors.PyMongoError as e:
         return jsonify({'error': str(e)}), 500
 
     except Exception as e:
         return jsonify({'error': f'An unexpected error occurred: {str(e)}'}), 500
+
 

@@ -8,9 +8,9 @@ images_bp = Blueprint('images', __name__)
 
 @images_bp.route('/upload', methods=['POST'])
 def upload_image():
-    if 'images' not in request.files or 'title' not in request.form:
+    if 'images' not in request.files or 'title' not in request.form or 'level' not in request.form:
         return jsonify({'error': 'No images or title part in the request'}), 400
-
+    level=request.form['level']
     title = request.form['title']
     files = request.files.getlist('images')
     file_ids = []
@@ -22,14 +22,16 @@ def upload_image():
             return jsonify({'error': str(e)}), 500
 
     try:
-        existing_image_set = db.image_sets.find_one({'title': title})
+        existing_image_set = db.image_sets.find_one({'title': title,'level':level})
         if existing_image_set:
             db.image_sets.update_one(
-                {'title': title},
+
+                {'title': title,'level':level},
                 {'$push': {'file_ids': {'$each': file_ids}}}
             )
         else:
             db.image_sets.insert_one({
+                'level':level,
                 'title': title,
                 'file_ids': file_ids
             })
@@ -39,9 +41,9 @@ def upload_image():
     return jsonify({'message': 'Images uploaded successfully', 'file_ids': file_ids}), 200
 
 @images_bp.route('/images/<title>', methods=['GET'])
-def get_images_by_title(title):
+def get_images_by_title(title,level):
     try:
-        image_set = db.image_sets.find_one({'title': title})
+        image_set = db.image_sets.find_one({'title': title,'level':level})
         if not image_set:
             return jsonify({'error': 'No images found with the given title'}), 404
 
@@ -64,6 +66,7 @@ def get_images():
         sets_data = []
         for image_set in image_sets:
             sets_data.append({
+                # 'level': image_set['level'],
                 'title': image_set['title'],
                 'file_ids': image_set['file_ids']
             })
@@ -71,6 +74,32 @@ def get_images():
     except errors.PyMongoError as e:
         return jsonify({'error': str(e)}), 500
 
+
+@images_bp.route('/get_level', methods=['GET'])
+def get_level_images():
+    level = request.args.get('level')  # Get the level parameter from the query string
+    if not level:
+        return jsonify({'error': 'Level parameter is required'}), 400
+
+    try:
+        # Query to find image sets that match the specified level
+        image_sets = db.image_sets.find({'level': level}).sort('_id', -1)
+        
+        sets_data = []
+        for image_set in image_sets:
+            sets_data.append({
+                'level': image_set['level'],
+                'title': image_set['title'],
+                'file_ids': image_set['file_ids']
+            })
+        
+        if not sets_data:
+            return jsonify({'message': 'No image sets found for this level'}), 404
+
+        return jsonify({'image_sets': sets_data}), 200
+    except errors.PyMongoError as e:
+        return jsonify({'error': str(e)}), 500
+    
 @images_bp.route('/image_get_fileid', methods=['POST'])
 def image_fileid_get():
     try:
@@ -90,12 +119,14 @@ def delete_images():
     try:
         data = request.json
         title = data.get('title')
+        level = data.get('level')
 
-        if not title:
-            return jsonify({'error': 'Title is required'}), 400
+        print('Received data:', {'title': title, 'level': level})  # Log received data
 
-        # Find the image set by title
-        image_set = db.image_sets.find_one({'title': title})
+        if not title or not level:
+            return jsonify({'error': 'Title and level are required'}), 400
+
+        image_set = db.image_sets.find_one({'title': title, 'level': level})
         if not image_set:
             return jsonify({'error': 'No image set found with the specified title'}), 404
 
@@ -128,3 +159,4 @@ def delete_images():
 
     except Exception as e:
         return jsonify({'error': f'An unexpected error occurred: {str(e)}'}), 500
+

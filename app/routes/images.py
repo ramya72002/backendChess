@@ -41,11 +41,13 @@ def upload_image():
     return jsonify({'message': 'Images uploaded successfully', 'file_ids': file_ids}), 200
 
 @images_bp.route('/images/<title>', methods=['GET'])
-def get_images_by_title(title,level):
+def get_images_by_title(title):
+    level = request.args.get('level')
     try:
-        image_set = db.image_sets.find_one({'title': title,'level':level})
+        # Find the image set by both title and level
+        image_set = db.image_sets.find_one({'title': title, 'level': level})
         if not image_set:
-            return jsonify({'error': 'No images found with the given title'}), 404
+            return jsonify({'error': 'No images found with the given title and level'}), 404
 
         image_data = []
         for file_id in image_set['file_ids']:
@@ -55,9 +57,11 @@ def get_images_by_title(title,level):
                 'filename': file.filename,
                 'url': f"/image/{file_id}"
             })
+
         return jsonify({'images': image_data}), 200
     except errors.PyMongoError as e:
         return jsonify({'error': str(e)}), 500
+
 
 @images_bp.route('/get', methods=['GET'])
 def get_images():

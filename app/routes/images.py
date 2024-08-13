@@ -206,21 +206,7 @@ def get_image_sets():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-# @images_bp.route('/get', methods=['GET'])
-# def get_images():
-#     try:
-#         image_sets = db.image_sets.find().sort('_id', -1).limit(6)
-#         sets_data = []
-#         for image_set in image_sets:
-#             sets_data.append({
-#                 # 'level': image_set['level'],
-#                 'title': image_set['title'],
-#                 'file_ids': image_set['file_ids']
-#             })
-#         return jsonify({'image_sets': sets_data}), 200
-#     except errors.PyMongoError as e:
-#         return jsonify({'error': str(e)}), 500
+ 
 
 
 @images_bp.route('/get_level', methods=['GET'])
@@ -268,38 +254,45 @@ def delete_images():
         data = request.json
         title = data.get('title')
         level = data.get('level')
+        category = data.get('category')
+        
+        live = data.get('live')
+         
 
-        print('Received data:', {'title': title, 'level': level})  # Log received data
+        print('Received data:', {'title': title, 'level': level,'category':category,'live':live})  # Log received data
 
         if not title or not level:
             return jsonify({'error': 'Title and level are required'}), 400
 
         # Find the image set to be deleted
-        image_set = db.image_sets.find_one({'title': title, 'level': level})
+        image_set = db.image_sets.find_one({'title': title, 'level': level,'category':category,'live':live})
+        print("imm",image_set)
         if not image_set:
             return jsonify({'error': 'No image set found with the specified title'}), 404
 
         file_ids = image_set.get('file_ids', [])
 
         # Loop over each file_id and delete related records from fs.files and fs.chunks
-        for file_id in file_ids:
+        for file_id_obj in file_ids:
             try:
-                file_id_obj = ObjectId(file_id)
+                print("hi",file_ids[file_id_obj])
+                print(file_ids[file_id_obj]["id"])
+                 # file_id_obj = file_id
                 
                 # Delete the file document from fs.files
-                fs_files_delete_result = db.fs.files.delete_one({'_id': file_id_obj})
+                fs_files_delete_result = db.fs.files.delete_one({'_id': ObjectId(file_ids[file_id_obj]["id"])})
                 
                 if fs_files_delete_result.deleted_count == 0:
-                    return jsonify({'error': f'File with id {file_id} not found in fs.files'}), 404
-                
+                    return jsonify({'error': f'File with id {file_id_obj} not found in fs.files'}), 404
+ 
                 # Delete the related chunks from fs.chunks
-                fs_chunks_delete_result = db.fs.chunks.delete_many({'files_id': file_id_obj})
+                fs_chunks_delete_result = db.fs.chunks.delete_many({'files_id': ObjectId(file_ids[file_id_obj]["id"])})
 
             except errors.PyMongoError as e:
-                return jsonify({'error': f'Error deleting file or chunks with id {file_id}: {str(e)}'}), 500
+                return jsonify({'error': f'Error deleting file or chunks with id  : {str(e)}'}), 500
 
         # Delete the entire image set document
-        delete_result = db.image_sets.delete_one({'title': title, 'level': level})
+        delete_result = db.image_sets.delete_one({'title': title, 'level': level,'category':category,'live':live})
         if delete_result.deleted_count == 0:
             return jsonify({'error': 'Failed to delete the image set document'}), 500
 

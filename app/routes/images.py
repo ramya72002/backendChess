@@ -111,9 +111,11 @@ def get_puzzle():
             'live': image_set.get('live'),
             'date_time': image_set.get('date_time'),
             'file_ids': {
+                f'puzzle{puzzle_number}':{
                 'id': puzzle_info.get('id'),
                 'solution': puzzle_info.get('solution'),
                 'sid_link': puzzle_info.get('sid_link')
+                }
             }
         }
         return jsonify(response), 200

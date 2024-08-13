@@ -9,7 +9,8 @@ images_bp = Blueprint('images', __name__)
  
 @images_bp.route('/upload', methods=['POST'])
 def upload_image():
-    if 'images' not in request.files or 'title' not in request.form or 'level' not in request.form or 'puzzle_number' not in request.form:
+    # Check for required fields in the request
+    if 'images' not in request.files or 'title' not in request.form or 'level' not in request.form:
         return jsonify({'error': 'Missing required fields in the request'}), 400
     
     level = request.form['level']
@@ -17,7 +18,9 @@ def upload_image():
     title = request.form['title']
     live = request.form['live']
     date_time = request.form['date_time']
-    puzzle_number = request.form['puzzle_number']  # Get puzzle number from the request
+    
+    # Get puzzle number from the request or default to 1 if not provided
+    puzzle_number = request.form.get('puzzle_number', '1')
     
     files = request.files.getlist('images')
     if not files:

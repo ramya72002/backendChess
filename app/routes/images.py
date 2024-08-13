@@ -223,7 +223,11 @@ def get_level_images():
         for image_set in image_sets:
             sets_data.append({
                 'level': image_set['level'],
+                'live':image_set['live'],
                 'title': image_set['title'],
+                'category':image_set['category'],
+                
+                'date_time':image_set['date_time'],
                 'file_ids': image_set['file_ids']
             })
         

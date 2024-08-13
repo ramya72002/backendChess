@@ -6,39 +6,151 @@ from pymongo import errors
 
 images_bp = Blueprint('images', __name__)
 
+ 
 @images_bp.route('/upload', methods=['POST'])
 def upload_image():
     if 'images' not in request.files or 'title' not in request.form or 'level' not in request.form:
         return jsonify({'error': 'No images or title part in the request'}), 400
-    level=request.form['level']
+    
+    level = request.form['level']
+    category = request.form["category"]
     title = request.form['title']
+    live = request.form['live']
+    date_time = request.form['date_time']
+    
     files = request.files.getlist('images')
-    file_ids = []
-    for file in files:
-        try:
+    if not files:
+        return jsonify({'error': 'No files uploaded'}), 400
+
+    file_ids_dict = {}
+    try:
+        for i, file in enumerate(files):
             file_id = fs.put(file, filename=file.filename, content_type=file.content_type)
-            file_ids.append(str(file_id))
-        except errors.PyMongoError as e:
-            return jsonify({'error': str(e)}), 500
+            file_ids_dict[f'puzzle{i+1}'] = {
+                'id': str(file_id),
+                'solution': 'solution_placeholder',  # Placeholder, update as needed
+                'sid_link': 'link_placeholder'  # Placeholder, update as needed
+            }
+    except Exception as e:
+        return jsonify({'error': f'Failed to upload file: {str(e)}'}), 500
 
     try:
-        existing_image_set = db.image_sets.find_one({'title': title,'level':level})
+        existing_image_set = db.image_sets.find_one({
+            'title': title,
+            'level': level,
+            'category': category,
+            'live': live,
+            'date_time': date_time
+        })
         if existing_image_set:
             db.image_sets.update_one(
-
-                {'title': title,'level':level},
-                {'$push': {'file_ids': {'$each': file_ids}}}
+                {'title': title, 'level': level, 'category': category, 'live': live, 'date_time': date_time},
+                {'$set': {'file_ids': file_ids_dict}}
             )
         else:
             db.image_sets.insert_one({
-                'level':level,
+                'level': level,
                 'title': title,
-                'file_ids': file_ids
+                'category': category,
+                'live': live,
+                'date_time': date_time,
+                'file_ids': file_ids_dict
             })
-    except errors.PyMongoError as e:
-        return jsonify({'error': str(e)}), 500
+    except Exception as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
 
-    return jsonify({'message': 'Images uploaded successfully', 'file_ids': file_ids}), 200
+    return jsonify({'message': 'Images uploaded successfully', 'file_ids': file_ids_dict}), 200
+
+
+@images_bp.route('/getpuzzleid', methods=['GET'])
+def get_puzzle():
+    level = request.args.get('level')
+    category = request.args.get('category')
+    title = request.args.get('title')
+    live = request.args.get('live')
+    puzzle_number = request.args.get('puzzle_number')
+
+    if not (level and category and title and live and puzzle_number):
+        return jsonify({'error': 'Missing required parameters'}), 400
+
+    # Construct the query to find the image set
+    query = {
+        'level': level,
+        'category': category,
+        'title': title,
+        'live': live
+    }
+
+    try:
+        image_set = db.image_sets.find_one(query)
+        if not image_set:
+            return jsonify({'error': 'Image set not found'}), 404
+        
+        # Extract the file_ids and puzzle info
+        puzzle_info = image_set.get('file_ids', {}).get(f'puzzle{puzzle_number}', {})
+        
+        response = {
+            'level': image_set.get('level'),
+            'category': image_set.get('category'),
+            'title': image_set.get('title'),
+            'live': image_set.get('live'),
+            'date_time': image_set.get('date_time'),
+            'puzzle': {
+                'id': puzzle_info.get('id'),
+                'solution': puzzle_info.get('solution'),
+                'sid_link': puzzle_info.get('sid_link')
+            }
+        }
+        return jsonify(response), 200
+
+    except Exception as e:
+        return jsonify({'error': f'Error retrieving puzzle data: {str(e)}'}), 500
+
+
+@images_bp.route('/get_puzzle_sol', methods=['PUT'])
+def update_puzzle_sol():
+    # Extract data from request
+    data = request.json
+    level = data.get('level')
+    category = data.get('category')
+    title = data.get('title')
+    live = data.get('live')
+    column_name = data.get('column_name')
+    sid_link = data.get('sid_link')
+    solution = data.get('solution')
+
+    if not all([level, category, title, live, column_name, sid_link, solution]):
+        return jsonify({'error': 'Missing required fields in the request'}), 400
+
+    # Build the update query
+    update_query = {
+        '$set': {
+            f'file_ids.{column_name}.sid_link': sid_link,
+            f'file_ids.{column_name}.solution': solution
+        }
+    }
+
+    # Find and update the document
+    try:
+        result = db.image_sets.update_one(
+            {
+                'title': title,
+                'level': level,
+                'category': category,
+                'live': live
+            },
+            update_query
+        )
+        
+        if result.matched_count == 0:
+            return jsonify({'error': 'No matching document found'}), 404
+        
+        return jsonify({'message': 'Puzzle updated successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+ 
+
 
 @images_bp.route('/images/<title>', methods=['GET'])
 def get_images_by_title(title):
@@ -62,21 +174,36 @@ def get_images_by_title(title):
     except errors.PyMongoError as e:
         return jsonify({'error': str(e)}), 500
 
-
-@images_bp.route('/get', methods=['GET'])
-def get_images():
+@images_bp.route('/imagesets', methods=['GET'])
+def get_image_sets():
     try:
-        image_sets = db.image_sets.find().sort('_id', -1).limit(6)
-        sets_data = []
+        # Fetch all records from the image_sets collection, sorted by _id in descending order
+        image_sets = list(db.image_sets.find({}).sort('_id', -1))
+        
+        # Convert ObjectId to string and return all fields
         for image_set in image_sets:
-            sets_data.append({
-                # 'level': image_set['level'],
-                'title': image_set['title'],
-                'file_ids': image_set['file_ids']
-            })
-        return jsonify({'image_sets': sets_data}), 200
-    except errors.PyMongoError as e:
+            image_set['_id'] = str(image_set['_id'])  # Convert ObjectId to string
+        
+        return jsonify(image_sets), 200
+    
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# @images_bp.route('/get', methods=['GET'])
+# def get_images():
+#     try:
+#         image_sets = db.image_sets.find().sort('_id', -1).limit(6)
+#         sets_data = []
+#         for image_set in image_sets:
+#             sets_data.append({
+#                 # 'level': image_set['level'],
+#                 'title': image_set['title'],
+#                 'file_ids': image_set['file_ids']
+#             })
+#         return jsonify({'image_sets': sets_data}), 200
+#     except errors.PyMongoError as e:
+#         return jsonify({'error': str(e)}), 500
 
 
 @images_bp.route('/get_level', methods=['GET'])

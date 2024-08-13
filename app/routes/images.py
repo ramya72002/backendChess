@@ -9,14 +9,15 @@ images_bp = Blueprint('images', __name__)
  
 @images_bp.route('/upload', methods=['POST'])
 def upload_image():
-    if 'images' not in request.files or 'title' not in request.form or 'level' not in request.form:
-        return jsonify({'error': 'No images or title part in the request'}), 400
+    if 'images' not in request.files or 'title' not in request.form or 'level' not in request.form or 'puzzle_number' not in request.form:
+        return jsonify({'error': 'Missing required fields in the request'}), 400
     
     level = request.form['level']
     category = request.form["category"]
     title = request.form['title']
     live = request.form['live']
     date_time = request.form['date_time']
+    puzzle_number = request.form['puzzle_number']  # Get puzzle number from the request
     
     files = request.files.getlist('images')
     if not files:
@@ -26,7 +27,8 @@ def upload_image():
     try:
         for i, file in enumerate(files):
             file_id = fs.put(file, filename=file.filename, content_type=file.content_type)
-            file_ids_dict[f'puzzle{i+1}'] = {
+            puzzle_key = f'puzzle{puzzle_number}'  # Use puzzle_number to create the key
+            file_ids_dict[puzzle_key] = {
                 'id': str(file_id),
                 'solution': 'solution_placeholder',  # Placeholder, update as needed
                 'sid_link': 'link_placeholder'  # Placeholder, update as needed
@@ -42,12 +44,21 @@ def upload_image():
             'live': live,
             'date_time': date_time
         })
+
         if existing_image_set:
-            db.image_sets.update_one(
+            print("Existing image set found, updating...")
+            print(f"Existing file_ids: {existing_image_set.get('file_ids', {})}")
+            updated_file_ids = existing_image_set.get('file_ids', {})
+            updated_file_ids.update(file_ids_dict)
+            print(f"Updated file_ids: {updated_file_ids}")
+            
+            update_result = db.image_sets.update_one(
                 {'title': title, 'level': level, 'category': category, 'live': live, 'date_time': date_time},
-                {'$set': {'file_ids': file_ids_dict}}
+                {'$set': {'file_ids': updated_file_ids}}
             )
+            print(f"Update Result: {update_result.modified_count} document(s) modified.")
         else:
+            print("No existing image set found, inserting new record...")
             db.image_sets.insert_one({
                 'level': level,
                 'title': title,
@@ -60,6 +71,7 @@ def upload_image():
         return jsonify({'error': f'Database error: {str(e)}'}), 500
 
     return jsonify({'message': 'Images uploaded successfully', 'file_ids': file_ids_dict}), 200
+
 
 
 @images_bp.route('/getpuzzleid', methods=['GET'])

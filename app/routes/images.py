@@ -169,8 +169,9 @@ def update_puzzle_sol():
  
 
 
-@images_bp.route('/images/<title>', methods=['GET'])
-def get_images_by_title(title):
+@images_bp.route('/images/title', methods=['GET'])
+def get_images_by_title():
+    title=request.args.get('title')
     level = request.args.get('level')
     category = request.args.get('category')
     try:

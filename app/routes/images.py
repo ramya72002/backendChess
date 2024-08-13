@@ -110,7 +110,7 @@ def get_puzzle():
             'title': image_set.get('title'),
             'live': image_set.get('live'),
             'date_time': image_set.get('date_time'),
-            'puzzle': {
+            'file_ids': {
                 'id': puzzle_info.get('id'),
                 'solution': puzzle_info.get('solution'),
                 'sid_link': puzzle_info.get('sid_link')

@@ -172,19 +172,21 @@ def update_puzzle_sol():
 @images_bp.route('/images/<title>', methods=['GET'])
 def get_images_by_title(title):
     level = request.args.get('level')
+    category = request.args.get('category')
     try:
         # Find the image set by both title and level
-        image_set = db.image_sets.find_one({'title': title, 'level': level})
+        image_set = db.image_sets.find_one({'title': title, 'level': level,'category': category})
         if not image_set:
             return jsonify({'error': 'No images found with the given title and level'}), 404
+        print(image_set)
 
         image_data = []
         for file_id in image_set['file_ids']:
-            file = fs.get(ObjectId(file_id))
+            file = fs.get(ObjectId(image_set['file_ids'][file_id]['id']))
             image_data.append({
-                'id': file_id,
+                'id': image_set['file_ids'][file_id]['id'],
                 'filename': file.filename,
-                'url': f"/image/{file_id}"
+                'url': f"/image/{image_set['file_ids'][file_id]['id']}"
             })
 
         return jsonify({'images': image_data}), 200

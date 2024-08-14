@@ -33,6 +33,7 @@ def upload_image():
             puzzle_key = f'puzzle{puzzle_number}'  # Use puzzle_number to create the key
             file_ids_dict[puzzle_key] = {
                 'id': str(file_id),
+                'move':"Black to Move",
                 'solution': 'solution_placeholder',  # Placeholder, update as needed
                 'sid_link': 'link_placeholder'  # Placeholder, update as needed
             }
@@ -113,6 +114,7 @@ def get_puzzle():
             'file_ids': {
                 f'puzzle{puzzle_number}':{
                 'id': puzzle_info.get('id'),
+                'move': puzzle_info.get('move'),
                 'solution': puzzle_info.get('solution'),
                 'sid_link': puzzle_info.get('sid_link')
                 }
@@ -133,15 +135,17 @@ def update_puzzle_sol():
     title = data.get('title')
     live = data.get('live')
     column_name = data.get('column_name')
+    move = data.get('move')
     sid_link = data.get('sid_link')
     solution = data.get('solution')
 
-    if not all([level, category, title, live, column_name, sid_link, solution]):
+    if not all([level, category, title, live, column_name, sid_link, solution,move]):
         return jsonify({'error': 'Missing required fields in the request'}), 400
 
     # Build the update query
     update_query = {
         '$set': {
+            f'file_ids.{column_name}.move': move,
             f'file_ids.{column_name}.sid_link': sid_link,
             f'file_ids.{column_name}.solution': solution
         }

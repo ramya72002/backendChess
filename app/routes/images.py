@@ -209,7 +209,37 @@ def get_image_sets():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
- 
+@images_bp.route('/images/solutions', methods=['GET'])
+def get_images_by_solutions():
+    title = request.args.get('title')
+    level = request.args.get('level')
+    category = request.args.get('category')
+    search_id = request.args.get('id')
+    
+    try:
+        # Find the image set by title, level, and category
+        image_set = db.image_sets.find_one({
+            'title': title,
+            'level': level,
+            'category': category
+        })
+        
+        if not image_set:
+            return jsonify({'error': 'No images found with the given title, level, and category'}), 404
+
+        image_data = []
+
+        # Check if 'id' is provided and find the corresponding image
+        if search_id:
+            for puzzle_key, puzzle_value in image_set.get('file_ids', {}).items():
+                if puzzle_value['id'] == search_id:
+                    image_data.append(puzzle_value)
+                    break
+
+        return jsonify({'images': image_data}), 200
+
+    except errors.PyMongoError as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @images_bp.route('/get_level', methods=['GET'])

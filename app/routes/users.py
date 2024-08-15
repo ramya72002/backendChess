@@ -63,6 +63,87 @@ def get_user_details():
     else:
         return jsonify({'success': False, 'message': 'User not found'}), 404
     
+@users_bp.route('/create_Arena_user', methods=['POST'])
+def arena_user_details():
+    email = request.json.get('email')
+    category = request.json.get('category')
+    title = request.json.get('title')
+    puzzle_no = request.json.get('puzzle_no')
+    
+    if not all([email, category, title, puzzle_no]):
+        return jsonify({'success': False, 'message': 'Email, category, title, and puzzle_no are required'}), 400
+    
+    # Ensure the category is one of the default categories
+    default_categories = ["Opening", "Middlegame", "Endgame", "Mixed"]
+    if category not in default_categories:
+        return jsonify({'success': False, 'message': f'Category must be one of {default_categories}'}), 400
+    
+    # Retrieve the user from the database
+    user = users_collection.find_one({'email': email})
+    
+    if user:
+        # Create the PuzzleArena structure based on the number of puzzles
+        puzzles = {f'Puzzle{i+1}': {'started': False, 'option_guessed': False, 'score': 0} for i in range(puzzle_no)}
+        
+        # Initialize PuzzleArena if not present
+        if 'PuzzleArena' not in user:
+            user['PuzzleArena'] = {cat: {} for cat in default_categories}
+        
+        # Add the title to the specified category
+        if title not in user['PuzzleArena'][category]:
+            user['PuzzleArena'][category][title] = puzzles
+        
+        # Save the updated user back to the database
+        users_collection.update_one({'email': email}, {'$set': user})
+        
+        return jsonify({'success': True, 'message': 'PuzzleArena updated successfully'}), 200
+    else:
+        return jsonify({'success': False, 'message': 'User not found'}), 404
+
+
+
+@users_bp.route('/update_puzzle_started', methods=['POST'])
+def update_puzzle_started():
+    email = request.json.get('email')
+    category = request.json.get('category')
+    title = request.json.get('title')
+    puzzle_no = request.json.get('puzzle_no')
+    score = request.json.get('score', None)  # Optional score field, default is None
+
+    if not all([email, category, title, puzzle_no]):
+        return jsonify({'success': False, 'message': 'Email, category, title, and puzzle_no are required'}), 400
+
+    # Ensure the category is one of the default categories
+    default_categories = ["Opening", "Middlegame", "Endgame", "Mixed"]
+    if category not in default_categories:
+        return jsonify({'success': False, 'message': f'Category must be one of {default_categories}'}), 400
+
+    # Retrieve the user from the database
+    user = users_collection.find_one({'email': email})
+
+    if user:
+        # Check if the specified title and category exist in the user's PuzzleArena
+        if category in user.get('PuzzleArena', {}) and title in user['PuzzleArena'][category]:
+            # Update the started flag and score if provided
+            puzzle_data = user['PuzzleArena'][category][title].get(puzzle_no, {})
+            puzzle_data['started'] = True
+
+            if score is not None:
+                puzzle_data['score'] = score
+
+            # Update the user document in the database
+            users_collection.update_one(
+                {'email': email},
+                {'$set': {f'PuzzleArena.{category}.{title}.{puzzle_no}': puzzle_data}}
+            )
+
+            return jsonify({'success': True, 'message': 'Puzzle started flag and score updated successfully'}), 200
+        else:
+            return jsonify({'success': False, 'message': 'Specified category or title not found'}), 404
+    else:
+        return jsonify({'success': False, 'message': 'User not found'}), 404
+
+
 
 @users_bp.route('/imageupdate', methods=['POST'])
 def update_user_image():

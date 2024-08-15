@@ -63,6 +63,42 @@ def get_user_details():
     else:
         return jsonify({'success': False, 'message': 'User not found'}), 404
     
+
+users_bp = Blueprint('users_bp', __name__)
+
+# Your existing database collection
+# Make sure to initialize `users_collection` appropriately in your actual code
+
+@users_bp.route('/get_Arena_user', methods=['GET'])
+def get_arena_user_details():
+    email = request.args.get('email')
+    category = request.args.get('category')
+    title = request.args.get('title')
+    
+    if not all([email, category, title]):
+        return jsonify({'success': False, 'message': 'Email, category, and title are required'}), 400
+    
+    # Ensure the category is one of the default categories
+    default_categories = ["Opening", "Middlegame", "Endgame", "Mixed"]
+    if category not in default_categories:
+        return jsonify({'success': False, 'message': f'Category must be one of {default_categories}'}), 400
+    
+    # Retrieve the user from the database
+    user = users_collection.find_one({'email': email})
+    
+    if user:
+        # Check if the PuzzleArena exists and contains the specified category and title
+        puzzle_arena = user.get('PuzzleArena', {})
+        category_arena = puzzle_arena.get(category, {})
+        puzzles = category_arena.get(title, {})
+        
+        if puzzles:
+            return jsonify({'success': True, 'puzzleArena': puzzles}), 200
+        else:
+            return jsonify({'success': False, 'message': 'PuzzleArena details not found for the specified category and title'}), 404
+    else:
+        return jsonify({'success': False, 'message': 'User not found'}), 404
+    
 @users_bp.route('/create_Arena_user', methods=['POST'])
 def arena_user_details():
     email = request.json.get('email')

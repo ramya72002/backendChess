@@ -109,6 +109,7 @@ def update_puzzle_started():
     title = request.json.get('title')
     puzzle_no = request.json.get('puzzle_no')
     score = request.json.get('score', None)  # Optional score field, default is None
+    option_guessed = request.json.get('option_guessed', None) 
 
     if not all([email, category, title, puzzle_no]):
         return jsonify({'success': False, 'message': 'Email, category, title, and puzzle_no are required'}), 400
@@ -130,6 +131,8 @@ def update_puzzle_started():
 
             if score is not None:
                 puzzle_data['score'] = score
+            if option_guessed is not None:
+                puzzle_data['option_guessed'] = True
 
             # Update the user document in the database
             users_collection.update_one(

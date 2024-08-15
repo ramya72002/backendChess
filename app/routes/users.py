@@ -64,7 +64,54 @@ def get_user_details():
         return jsonify({'success': False, 'message': 'User not found'}), 404
     
 
+@users_bp.route('/calculate_scores', methods=['POST'])
+def calculate_scores():
+    if request.content_type != 'application/json':
+        return jsonify({'success': False, 'message': 'Content-Type must be application/json'}), 415
+    
+    data = request.get_json()
+    
+    if 'email' not in data:
+        return jsonify({'success': False, 'message': 'Email is required'}), 400
+    
+    email = data['email']
+    
+    # Retrieve the user from the database
+    user = users_collection.find_one({'email': email})
+    
+    if not user:
+        return jsonify({'success': False, 'message': 'User not found'}), 404
 
+    # Initialize scores dictionary
+    scores = {
+        "Opening": 0,
+        "Middlegame": 0,
+        "Endgame": 0,
+        "Mixed": 0
+    }
+    
+    # Calculate scores for each category
+    puzzle_arena = user.get('PuzzleArena', {})
+    
+    for category in scores.keys():
+        category_arena = puzzle_arena.get(category, {})
+        for puzzle_set in category_arena.values():
+            for puzzle in puzzle_set.values():
+                scores[category] += puzzle.get('score', 0)
+    
+    # Update the user's record with the calculated scores
+    update_result = users_collection.update_one(
+        {'email': email},
+        {'$set': {'scores': scores}}
+    )
+    
+    # Log the result for debugging
+    print(f"Update result: {update_result.raw_result}")
+    
+    if update_result.modified_count > 0:
+        return jsonify({'success': True, 'scores': scores}), 200
+    else:
+        return jsonify({'success': True, 'scores': scores}), 200
 
 # Your existing database collection
 # Make sure to initialize `users_collection` appropriately in your actual code

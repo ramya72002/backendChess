@@ -64,7 +64,7 @@ def get_user_details():
         return jsonify({'success': False, 'message': 'User not found'}), 404
     
 
-users_bp = Blueprint('users_bp', __name__)
+
 
 # Your existing database collection
 # Make sure to initialize `users_collection` appropriately in your actual code
@@ -87,6 +87,8 @@ def get_arena_user_details():
     user = users_collection.find_one({'email': email})
     
     if user:
+        if 'PuzzleArena' not in user:
+            return jsonify({'success': False, 'message': 'PuzzleArena field not found'}), 200
         # Check if the PuzzleArena exists and contains the specified category and title
         puzzle_arena = user.get('PuzzleArena', {})
         category_arena = puzzle_arena.get(category, {})
@@ -95,7 +97,7 @@ def get_arena_user_details():
         if puzzles:
             return jsonify({'success': True, 'puzzleArena': puzzles}), 200
         else:
-            return jsonify({'success': False, 'message': 'PuzzleArena details not found for the specified category and title'}), 404
+            return jsonify({'success': False, 'message': 'PuzzleArena details not found for the specified category and title'}), 200
     else:
         return jsonify({'success': False, 'message': 'User not found'}), 404
     

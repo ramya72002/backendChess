@@ -158,6 +158,11 @@ def arena_user_details():
     if not all([email, category, title, puzzle_no]):
         return jsonify({'success': False, 'message': 'Email, category, title, and puzzle_no are required'}), 400
     
+    try:
+        puzzle_no = int(puzzle_no)
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Puzzle number must be an integer'}), 400
+    
     # Ensure the category is one of the default categories
     default_categories = ["Opening", "Middlegame", "Endgame", "Mixed"]
     if category not in default_categories:
@@ -167,21 +172,26 @@ def arena_user_details():
     user = users_collection.find_one({'email': email})
     
     if user:
-        # Create the PuzzleArena structure based on the number of puzzles
-        puzzles = {f'Puzzle{i+1}': {'started': False, 'option_guessed': False, 'score': 0} for i in range(puzzle_no)}
-        
         # Initialize PuzzleArena if not present
         if 'PuzzleArena' not in user:
             user['PuzzleArena'] = {cat: {} for cat in default_categories}
         
-        # Add the title to the specified category
         if title not in user['PuzzleArena'][category]:
+            # Create new puzzles if title doesn't exist
+            puzzles = {f'Puzzle{i+1}': {'started': False, 'option_guessed': False, 'score': 0} for i in range(puzzle_no)}
             user['PuzzleArena'][category][title] = puzzles
+        else:
+            # Append new puzzles to the existing title
+            existing_puzzles = user['PuzzleArena'][category][title]
+            current_max_puzzle_no = len(existing_puzzles)
+            
+            new_puzzles = {f'Puzzle{i+current_max_puzzle_no+1}': {'started': False, 'option_guessed': False, 'score': 0} for i in range(puzzle_no)}
+            existing_puzzles.update(new_puzzles)
         
         # Save the updated user back to the database
         users_collection.update_one({'email': email}, {'$set': user})
         
-        return jsonify({'success': True, 'message': 'PuzzleArena updated successfully'}), 200
+        return jsonify({'success': True, 'message': user['PuzzleArena']}), 200
     else:
         return jsonify({'success': False, 'message': 'User not found'}), 404
 

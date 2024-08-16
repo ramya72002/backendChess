@@ -331,16 +331,15 @@ def delete_images():
         level = data.get('level')
         category = data.get('category')
         
-        live = data.get('live')
          
 
-        print('Received data:', {'title': title, 'level': level,'category':category,'live':live})  # Log received data
+        print('Received data:', {'title': title, 'level': level,'category':category})  # Log received data
 
         if not title or not level:
             return jsonify({'error': 'Title and level are required'}), 400
 
         # Find the image set to be deleted
-        image_set = db.image_sets.find_one({'title': title, 'level': level,'category':category,'live':live})
+        image_set = db.image_sets.find_one({'title': title, 'level': level,'category':category})
         print("imm",image_set)
         if not image_set:
             return jsonify({'error': 'No image set found with the specified title'}), 404
@@ -367,7 +366,7 @@ def delete_images():
                 return jsonify({'error': f'Error deleting file or chunks with id  : {str(e)}'}), 500
 
         # Delete the entire image set document
-        delete_result = db.image_sets.delete_one({'title': title, 'level': level,'category':category,'live':live})
+        delete_result = db.image_sets.delete_one({'title': title, 'level': level,'category':category})
         if delete_result.deleted_count == 0:
             return jsonify({'error': 'Failed to delete the image set document'}), 500
 

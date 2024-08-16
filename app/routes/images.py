@@ -76,6 +76,40 @@ def upload_image():
 
     return jsonify({'message': 'Images uploaded successfully', 'file_ids': file_ids_dict}), 200
 
+@images_bp.route('/updatelivepuzzle', methods=['POST'])
+def update_live_puzzle():
+    # Get parameters from the request
+    level = request.json.get('level')
+    category = request.json.get('category')
+    title = request.json.get('title')
+    live = request.json.get('live')
+
+    # Validate parameters
+    if not (level and category and title and live is not None):
+        return jsonify({'error': 'Missing required parameters'}), 400
+
+    # Construct the query and update
+    query = {
+        'level': level,
+        'category': category,
+        'title': title
+    }
+    update = {
+        '$set': {'live': live}
+    }
+
+    try:
+        # Update the document in the database
+        result = db.image_sets.update_one(query, update)
+        if result.matched_count == 0:
+            return jsonify({'error': 'No matching document found'}), 404
+        if result.modified_count == 0:
+            return jsonify({'error': 'Document not updated'}), 500
+        
+        return jsonify({'message': 'Document updated successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': f'Error updating puzzle data: {str(e)}'}), 500
 
 
 @images_bp.route('/getpuzzleid', methods=['GET'])

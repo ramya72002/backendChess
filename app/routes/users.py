@@ -178,14 +178,14 @@ def arena_user_details():
         
         if title not in user['PuzzleArena'][category]:
             # Create new puzzles if title doesn't exist
-            puzzles = {f'Puzzle{i+1}': {'started': False, 'option_guessed': False, 'score': 0} for i in range(puzzle_no)}
+            puzzles = {f'Puzzle{i+1}': {'started': False, 'option_guessed': None, 'score': 0} for i in range(puzzle_no)}
             user['PuzzleArena'][category][title] = puzzles
         else:
             # Append new puzzles to the existing title
             existing_puzzles = user['PuzzleArena'][category][title]
             current_max_puzzle_no = len(existing_puzzles)
             
-            new_puzzles = {f'Puzzle{i+current_max_puzzle_no+1}': {'started': False, 'option_guessed': False, 'score': 0} for i in range(puzzle_no)}
+            new_puzzles = {f'Puzzle{i+current_max_puzzle_no+1}': {'started': False, 'option_guessed': None, 'score': 0} for i in range(puzzle_no)}
             existing_puzzles.update(new_puzzles)
         
         # Save the updated user back to the database
@@ -204,7 +204,7 @@ def update_puzzle_started():
     title = request.json.get('title')
     puzzle_no = request.json.get('puzzle_no')
     score = request.json.get('score', None)  # Optional score field, default is None
-    option_guessed = request.json.get('option_guessed', None) 
+    option_guessed = request.json.get('option_guessed', None)
 
     if not all([email, category, title, puzzle_no]):
         return jsonify({'success': False, 'message': 'Email, category, title, and puzzle_no are required'}), 400
@@ -223,11 +223,25 @@ def update_puzzle_started():
             # Update the started flag and score if provided
             puzzle_data = user['PuzzleArena'][category][title].get(puzzle_no, {})
             puzzle_data['started'] = True
+            if (puzzle_data['score']==1):
+                return jsonify({'success': True, 'message': 'Puzzle started flag and score updated successfully'}), 200
 
-            if score is not None:
+            # Check the existing value of option_guessed in the database
+            existing_option_guessed = puzzle_data.get('option_guessed', None)
+            
+            if existing_option_guessed is False:
+                # If option_guessed is False in the database, set score to 0
+                puzzle_data['score'] = 0
+            elif score is not None:
+                # Otherwise, update the score as provided
                 puzzle_data['score'] = score
+
+            # Update option_guessed based on the input, unless it's False in the database
             if option_guessed is not None:
+                puzzle_data['option_guessed'] = option_guessed
+            elif existing_option_guessed is None:
                 puzzle_data['option_guessed'] = True
+            # No need to update if existing_option_guessed is False or True
 
             # Update the user document in the database
             users_collection.update_one(
@@ -240,7 +254,6 @@ def update_puzzle_started():
             return jsonify({'success': False, 'message': 'Specified category or title not found'}), 404
     else:
         return jsonify({'success': False, 'message': 'User not found'}), 404
-
 
 
 @users_bp.route('/imageupdate', methods=['POST'])

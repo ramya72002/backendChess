@@ -239,8 +239,8 @@ def update_puzzle_started():
             # Update option_guessed based on the input, unless it's False in the database
             if option_guessed is not None:
                 puzzle_data['option_guessed'] = option_guessed
-            elif existing_option_guessed is None:
-                puzzle_data['option_guessed'] = True
+            # elif existing_option_guessed is None:
+            #     puzzle_data['option_guessed'] = None
             # No need to update if existing_option_guessed is False or True
 
             # Update the user document in the database
@@ -250,6 +250,36 @@ def update_puzzle_started():
             )
 
             return jsonify({'success': True, 'message': 'Puzzle started flag and score updated successfully'}), 200
+        else:
+            return jsonify({'success': False, 'message': 'Specified category or title not found'}), 404
+    else:
+        return jsonify({'success': False, 'message': 'User not found'}), 404
+
+@users_bp.route('/get_visited_info', methods=['GET'])
+def get_puzzle_visited_info():
+    email = request.args.get('email')
+    category = request.args.get('category')
+    title = request.args.get('title')
+    puzzle_no = request.args.get('puzzle_no')
+
+    if not all([email, category, title, puzzle_no]):
+        return jsonify({'success': False, 'message': 'Email, category, title, and puzzle_no are required'}), 400
+
+    # Ensure the category is one of the default categories
+    default_categories = ["Opening", "Middlegame", "Endgame", "Mixed"]
+    if category not in default_categories:
+        return jsonify({'success': False, 'message': f'Category must be one of {default_categories}'}), 400
+
+    # Retrieve the user from the database
+    user = users_collection.find_one({'email': email})
+
+    if user:
+        # Check if the specified category and title exist in the user's PuzzleArena
+        if category in user.get('PuzzleArena', {}) and title in user['PuzzleArena'][category]:
+            puzzle_data = user['PuzzleArena'][category][title].get(puzzle_no, {})
+            option_guessed = puzzle_data.get('option_guessed', None)
+
+            return jsonify({'success': True, 'option_guessed': option_guessed}), 200
         else:
             return jsonify({'success': False, 'message': 'Specified category or title not found'}), 404
     else:

@@ -81,39 +81,56 @@ def upload_image():
 
 @images_bp.route('/updatelivepuzzle', methods=['POST'])
 def update_live_puzzle():
-    # Get parameters from the request
-    level = request.json.get('level')
-    category = request.json.get('category')
-    title = request.json.get('title')
-    live = request.json.get('live')
+    # Extract parameters from the request
+    data = request.get_json()
+    level = data.get('level')
+    category = data.get('category')
+    title = data.get('title')
+    live = data.get('live')
+    live_link = data.get('live_link')
 
-    # Validate parameters
-    if not (level and category and title and live is not None):
+    # Validate required parameters
+    if not (level and category and title):
         return jsonify({'error': 'Missing required parameters'}), 400
 
-    # Construct the query and update
+    # Construct the query
     query = {
         'level': level,
         'category': category,
         'title': title
     }
-    update = {
-        '$set': {'live': live}
-    }
+
+    # Construct the update dictionary dynamically
+    update = {}
+    if live is not None:
+        update['live'] = live
+    if live_link is not None:
+        update['live_link'] = live_link
+
+    # Check if there's anything to update
+    if not update:
+        return jsonify({'error': 'No update parameters provided'}), 400
+
+    # Prepare the update operation
+    update_operation = {'$set': update}
 
     try:
         # Update the document in the database
-        result = db.image_sets.update_one(query, update)
+        result = db.image_sets.update_one(query, update_operation)
+
+        # Handle the result of the update operation
         if result.matched_count == 0:
             return jsonify({'error': 'No matching document found'}), 404
         if result.modified_count == 0:
             return jsonify({'error': 'Document not updated'}), 500
-        
-        return jsonify({'message': 'Document updated successfully'}), 200
+
+        return jsonify({
+            'message': 'Document updated successfully',
+            'updated_fields': update
+        }), 200
 
     except Exception as e:
         return jsonify({'error': f'Error updating puzzle data: {str(e)}'}), 500
-
 
 @images_bp.route('/getpuzzleid', methods=['GET'])
 def get_puzzle():

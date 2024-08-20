@@ -17,6 +17,7 @@ def upload_image():
     category = request.form["category"]
     title = request.form['title']
     live = request.form['live']
+    live_link = request.form.get('live_link', '')  # Default to an empty string if not provided
     date_time = request.form['date_time']
     
     # Get puzzle number from the request or default to 1 if not provided
@@ -33,7 +34,7 @@ def upload_image():
             puzzle_key = f'puzzle{puzzle_number}'  # Use puzzle_number to create the key
             file_ids_dict[puzzle_key] = {
                 'id': str(file_id),
-                'move':"Black to Move",
+                'move': "Black to Move",
                 'solution': 'solution_placeholder',  # Placeholder, update as needed
                 'sid_link': 'link_placeholder'  # Placeholder, update as needed
             }
@@ -46,6 +47,7 @@ def upload_image():
             'level': level,
             'category': category,
             'live': live,
+            'live_link': live_link,
             'date_time': date_time
         })
 
@@ -68,6 +70,7 @@ def upload_image():
                 'title': title,
                 'category': category,
                 'live': live,
+                'live_link': live_link,
                 'date_time': date_time,
                 'file_ids': file_ids_dict
             })
@@ -145,6 +148,7 @@ def get_puzzle():
             'title': image_set.get('title'),
             'live': image_set.get('live'),
             'date_time': image_set.get('date_time'),
+            'live_link':image_set.get('live_link',''),
             'file_ids': {
                 f'puzzle{puzzle_number}':{
                 'id': puzzle_info.get('id'),
@@ -168,12 +172,13 @@ def update_puzzle_sol():
     category = data.get('category')
     title = data.get('title')
     live = data.get('live')
+    live_link = data.get('live_link','')  # New field
     column_name = data.get('column_name')
     move = data.get('move')
     sid_link = data.get('sid_link')
     solution = data.get('solution')
 
-    if not all([level, category, title, live, column_name, sid_link, solution,move]):
+    if not all([level, category, title, live, column_name, sid_link, solution, move]):
         return jsonify({'error': 'Missing required fields in the request'}), 400
 
     # Build the update query
@@ -181,7 +186,8 @@ def update_puzzle_sol():
         '$set': {
             f'file_ids.{column_name}.move': move,
             f'file_ids.{column_name}.sid_link': sid_link,
-            f'file_ids.{column_name}.solution': solution
+            f'file_ids.{column_name}.solution': solution,
+            'live_link': live_link  # Add or update the live_link field
         }
     }
 
@@ -192,7 +198,7 @@ def update_puzzle_sol():
                 'title': title,
                 'level': level,
                 'category': category,
-                'live': live
+                'live': live,
             },
             update_query
         )
@@ -293,13 +299,13 @@ def get_level_images():
         sets_data = []
         for image_set in image_sets:
             sets_data.append({
-                'level': image_set['level'],
-                'live':image_set['live'],
-                'title': image_set['title'],
-                'category':image_set['category'],
-                
-                'date_time':image_set['date_time'],
-                'file_ids': image_set['file_ids']
+                        'level': image_set.get('level', ''),
+                        'live': image_set.get('live', ''),
+                        'title': image_set.get('title', ''),
+                        'category': image_set.get('category', ''),
+                        'live_link': image_set.get('live_link', ''),  # Use get() to handle optional field
+                        'date_time': image_set.get('date_time', ''),
+                        'file_ids': image_set.get('file_ids', {})
             })
         
         if not sets_data:

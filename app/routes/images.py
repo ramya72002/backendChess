@@ -35,8 +35,8 @@ def upload_image():
             file_ids_dict[puzzle_key] = {
                 'id': str(file_id),
                 'move': "Black to Move",
-                'solution': 'solution_placeholder',  # Placeholder, update as needed
-                'sid_link': 'link_placeholder'  # Placeholder, update as needed
+                'solution': None,  # Placeholder, update as needed
+                'sid_link': None  # Placeholder, update as needed
             }
     except Exception as e:
         return jsonify({'error': f'Failed to upload file: {str(e)}'}), 500
@@ -171,7 +171,7 @@ def get_puzzle():
                 'id': puzzle_info.get('id'),
                 'move': puzzle_info.get('move'),
                 'solution': puzzle_info.get('solution'),
-                'sid_link': puzzle_info.get('sid_link')
+                'sid_link': puzzle_info.get('sid_link','')
                 }
             }
         }
@@ -192,10 +192,10 @@ def update_puzzle_sol():
     live_link = data.get('live_link','')  # New field
     column_name = data.get('column_name')
     move = data.get('move')
-    sid_link = data.get('sid_link')
+    sid_link = data.get('sid_link','')
     solution = data.get('solution')
 
-    if not all([level, category, title, live, column_name, sid_link, solution, move]):
+    if not all([level, category, title, live, column_name, solution, move]):
         return jsonify({'error': 'Missing required fields in the request'}), 400
 
     # Build the update query

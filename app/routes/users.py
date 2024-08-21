@@ -46,23 +46,16 @@ def get_user_details():
     if not email:
         return jsonify({'success': False, 'message': 'Email parameter is required'}), 400
     
-    # Retrieve the user from the database
-    user = users_collection.find_one({'email': email})
+    # Retrieve the user from the database, excluding the _id field
+    user = users_collection.find_one(
+        {'email': email},
+        {'_id': 0}  # Exclude _id field from the results
+    )
     
     if user:
-        # Customize this to match your user schema
-        user_details = {
-            'name': user.get('name', ''),
-            'email': user.get('email', ''),
-            'image': user.get('image', ''),
-            'level': user.get('level', 'level1'),  # Include the level in the response
-            'puzzle_score': user.get('puzzle_score', ''),
-            # Add other fields as needed
-        }
-        return jsonify({'success': True, 'data': user_details}), 200
+        return jsonify({'success': True, 'data': user}), 200
     else:
         return jsonify({'success': False, 'message': 'User not found'}), 404
-    
 
 @users_bp.route('/calculate_scores', methods=['POST'])
 def calculate_scores():

@@ -169,8 +169,8 @@ def get_puzzle():
             'file_ids': {
                 f'puzzle{puzzle_number}':{
                 'id': puzzle_info.get('id'),
-                'move': puzzle_info.get('move'),
-                'solution': puzzle_info.get('solution'),
+                'move': puzzle_info.get('move',''),
+                'solution': puzzle_info.get('solution',''),
                 'sid_link': puzzle_info.get('sid_link','')
                 }
             }
@@ -191,11 +191,11 @@ def update_puzzle_sol():
     live = data.get('live')
     live_link = data.get('live_link','')  # New field
     column_name = data.get('column_name')
-    move = data.get('move')
+    move = data.get('move','')
     sid_link = data.get('sid_link','')
-    solution = data.get('solution')
+    solution = data.get('solution','')
 
-    if not all([level, category, title, live, column_name, solution, move]):
+    if not all([level, category, title, live, column_name]):
         return jsonify({'error': 'Missing required fields in the request'}), 400
 
     # Build the update query

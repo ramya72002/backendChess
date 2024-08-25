@@ -174,12 +174,14 @@ def arena_user_details():
             puzzles = {f'Puzzle{i+1}': {'started': False, 'option_guessed': None,'timer': 0, 'score': 0} for i in range(puzzle_no)}
             user['PuzzleArena'][category][title] = puzzles
         else:
-            # Append new puzzles to the existing title
+            # Append new puzzles only if more are needed
             existing_puzzles = user['PuzzleArena'][category][title]
             current_max_puzzle_no = len(existing_puzzles)
             
-            new_puzzles = {f'Puzzle{i+current_max_puzzle_no+1}': {'started': False, 'option_guessed': None,'timer': 0, 'score': 0} for i in range(puzzle_no)}
-            existing_puzzles.update(new_puzzles)
+            if puzzle_no > current_max_puzzle_no:
+                # Calculate how many new puzzles are needed
+                new_puzzles = {f'Puzzle{i+current_max_puzzle_no+1}': {'started': False, 'option_guessed': None,'timer': 0, 'score': 0} for i in range(puzzle_no - current_max_puzzle_no)}
+                existing_puzzles.update(new_puzzles)
         
         # Save the updated user back to the database
         users_collection.update_one({'email': email}, {'$set': user})

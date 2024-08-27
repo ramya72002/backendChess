@@ -21,6 +21,7 @@ def create_app():
     from app.routes.students import students_bp
     from app.routes.sessions import sessions_bp
     from app.routes.email import email_bp
+    from app.routes.courses import courses_bp
     from app.routes.tournaments import tournaments_bp
     from app.routes.users import users_bp
     from app.routes.upcomingActivities import upcomming_bp
@@ -30,6 +31,7 @@ def create_app():
     app.register_blueprint(students_bp)
     app.register_blueprint(sessions_bp)
     app.register_blueprint(email_bp)
+    app.register_blueprint(courses_bp)
     app.register_blueprint(tournaments_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(upcomming_bp)

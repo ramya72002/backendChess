@@ -6,8 +6,11 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 from flask import Blueprint, request, jsonify
-import re
+import os
 
+stripe_url = "https://api.stripe.com/v1/checkout/sessions"
+secret_key = os.getenv('STRIPE_SECRET_KEY')
+payment_link = os.getenv('PAYMENT_LINK')
 courses_bp = Blueprint('courses', __name__)
 
 @courses_bp.route('/add-course', methods=['POST'])
@@ -178,17 +181,12 @@ def check_email():
     # Retrieve the email and payment link from the query parameters
     email_to_check = request.args.get('email')
     email_to_check = email_to_check.strip()
-    payment_link = "plink_1PhXAIG7veQNriZVJulznndQ"
 
     if not email_to_check:
         return jsonify({'error': "'email' query parameter is required"}), 400
 
     if not payment_link:
         return jsonify({'error': "'payment_link' query parameter is required"}), 400
-
-    # Stripe API URL and secret key
-    stripe_url = "https://api.stripe.com/v1/checkout/sessions"
-    secret_key = "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"
 
     # Make the API call
     response = requests.get(
@@ -214,7 +212,6 @@ def check_email():
             email = customer.get('email')
             if email:
                 emails.append(email)
-    print(emails)
 
     # Check if the provided email is in the list
     if email_to_check in emails:

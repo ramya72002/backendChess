@@ -1,5 +1,6 @@
 from bson import ObjectId
 from flask import Blueprint, request, jsonify
+import requests
 from app.database import admin_collection,users_collection
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -172,7 +173,52 @@ def send_email():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@courses_bp.route('/check-email', methods=['GET'])
+def check_email():
+    # Retrieve the email and payment link from the query parameters
+    email_to_check = request.args.get('email')
+    email_to_check = email_to_check.strip()
+    payment_link = "plink_1PhXAIG7veQNriZVJulznndQ"
 
+    if not email_to_check:
+        return jsonify({'error': "'email' query parameter is required"}), 400
 
+    if not payment_link:
+        return jsonify({'error': "'payment_link' query parameter is required"}), 400
 
+    # Stripe API URL and secret key
+    stripe_url = "https://api.stripe.com/v1/checkout/sessions"
+    secret_key = "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"
+
+    # Make the API call
+    response = requests.get(
+        stripe_url,
+        params={
+            "payment_link": payment_link,
+            "expand[]": "data.customer",
+            "limit": 100
+        },
+        auth=(secret_key, '')
+    )
+
+    if response.status_code != 200:
+        return jsonify({'error': 'Failed to retrieve data from Stripe'}), response.status_code
+
+    data = response.json()
+
+    # Extract email addresses from the response
+    emails = []
+    for session in data.get('data', []):
+        customer = session.get('customer_details')
+        if customer and isinstance(customer, dict):
+            email = customer.get('email')
+            if email:
+                emails.append(email)
+    print(emails)
+
+    # Check if the provided email is in the list
+    if email_to_check in emails:
+        return jsonify({'success': True}), 200
+    else:
+        return jsonify({'success': False}), 200
 

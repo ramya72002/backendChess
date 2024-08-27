@@ -50,7 +50,8 @@ def add_course():
     # Prepare the new course record
     new_course = {
         'title': title,
-        'completed_percentage': 0
+        'completed_percentage': 0,
+        'payment_status': "Not started"
     }
 
     # Add the new course to the 'registered_courses' list
@@ -124,7 +125,51 @@ def update_course_completion():
 
     if not course_found:
         return jsonify({'error': 'Course not found'}), 404
+
+
+@courses_bp.route('/update-payment-status', methods=['PUT'])
+def update_payment_status():
+    data = request.json
+    required_fields = ['email', 'title', 'payment_status']
     
+    # Check for required fields
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'error': f"'{field}' is required"}), 400
+
+    email = data['email']
+    title = data['title']
+    payment_status = data['payment_status']
+
+    # Search for the user by email
+    existing_user = users_collection.find_one({'email': email})
+
+    if not existing_user:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Check if 'registered_courses' field exists and if the course is registered
+    if 'registered_courses' not in existing_user:
+        return jsonify({'error': 'No registered courses found for this user'}), 400
+
+    # Find the course and update the payment status
+    course_found = False
+    for course in existing_user['registered_courses']:
+        if course['title'] == title:
+            course_found = True
+            break
+
+    if not course_found:
+        return jsonify({'error': 'Course not found'}), 404
+
+    # Update the payment status
+    users_collection.update_one(
+        {'email': email, 'registered_courses.title': title},
+        {'$set': {'registered_courses.$.payment_status': payment_status}}
+    )
+
+    return jsonify({'message': 'Payment status updated successfully'}), 200
+
+
 @courses_bp.route('/send_course_reg_email', methods=['POST'])
 def send_email():
     data = request.json

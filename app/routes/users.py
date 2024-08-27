@@ -15,7 +15,7 @@ def signup():
         # Check if user already exists
         existing_user = users_collection.find_one({'email': email, 'contactNumber': contact_number, 'level': level})
         if existing_user:
-            return jsonify({'error': 'User already exists. Please login.'}), 400
+            return jsonify({'error': 'User already exists. Please login.'}), 400 
         
         # Add new user data
         users_collection.insert_one(user_data)

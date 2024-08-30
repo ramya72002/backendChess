@@ -1,9 +1,44 @@
 from flask import Blueprint, request, jsonify
 from pymongo import ReturnDocument
 from app.database import users_collection
+import random
+import smtplib
+import os
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 users_bp = Blueprint('users', __name__)
 
+# Email configuration
+SENDER_EMAIL = os.getenv('SENDER_EMAIL', 'kidschesstournament@gmail.com')
+SENDER_PASSWORD = os.getenv('SENDER_PASSWORD', 'rrcd xdhn dpig ijqk')
+
+# Utility function to send OTP via email
+def send_otp(email, otp):
+    try:
+        subject = "Your OTP for Sign-In"
+        body = f"Your OTP is {otp}. It is valid for 10 minutes."
+
+        # Set up the MIME
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+
+        # Connect to Gmail's SMTP server
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        text = msg.as_string()
+        server.sendmail(SENDER_EMAIL, email, text)
+        server.quit()
+
+        print("OTP sent successfully.")
+    except Exception as e:
+        print(f"Failed to send OTP: {e}")
+
+# Signup API
 @users_bp.route('/signup', methods=['POST'])
 def signup():
     user_data = request.get_json()
@@ -23,7 +58,7 @@ def signup():
     else:
         return jsonify({'error': 'Invalid data format.'}), 400
 
-
+# Login API
 @users_bp.route('/login', methods=['POST'])
 def signin():
     login_data = request.get_json()
@@ -31,12 +66,40 @@ def signin():
     
     # Retrieve the user from the database
     user = users_collection.find_one({'email': email})
-    print(user)
     
     if user:
-        name = user.get('name')
-        return jsonify({'success': True, 'message': 'Login successful', 'name': name}), 200
-    return jsonify({'success': False, 'message': 'Email and Mobile Number is not registered'}), 200
+        if 'otp' not in user or user['otp'] is None:
+            otp = random.randint(100000, 999999)
+            users_collection.update_one({'email': email}, {'$set': {'otp': otp}})
+            send_otp(email, otp)
+            return jsonify({'success': True, 'message': 'OTP sent to email.', 'otp_required': True}), 200
+        else:
+            return jsonify({'success': True, 'message': 'OTP already sent.', 'otp_required': True}), 200
+    
+    return jsonify({'success': False, 'message': 'Email is not registered.'}), 400
+
+# OTP Verification API
+@users_bp.route('/verify_otp', methods=['POST'])
+def verify_otp():
+    otp_data = request.get_json()
+    email = otp_data.get('email')
+    otp = otp_data.get('otp')
+    print(email,otp)
+    # Verify that both email and OTP are provided
+    if not email or not otp:
+        return jsonify({'success': False, 'message': 'Email and OTP are required.'}), 400
+
+    # Find the user by email
+    user = users_collection.find_one({'email': email})
+    print(str(user.get('otp')) == otp)
+
+    # Check if user exists and OTP matches
+    if user and str(user.get('otp')) == otp:
+        # OTP matches, clear it from the database
+        users_collection.update_one({'email': email}, {'$unset': {'otp': ""}})
+        return jsonify({'success': True, 'message': 'OTP verified successfully.'}), 200
+    else:
+        return jsonify({'success': False, 'message': 'Invalid OTP or email.'}), 400
 
 
 @users_bp.route('/getuserdetails', methods=['GET'])

@@ -16,8 +16,8 @@ SENDER_PASSWORD = os.getenv('SENDER_PASSWORD', 'rrcd xdhn dpig ijqk')
 # Utility function to send OTP via email
 def send_otp(email, otp):
     try:
-        subject = "Your OTP for Sign-In"
-        body = f"Your OTP is {otp}. It is valid for 10 minutes."
+        subject = "Your OTP for Sign-In to Kids Learning Portal"
+        body = f"Your OTP is {otp} "
 
         # Set up the MIME
         msg = MIMEMultipart()

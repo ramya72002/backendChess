@@ -4,6 +4,7 @@ from app.database import users_collection
 import random
 import smtplib
 import os
+import uuid
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -63,21 +64,50 @@ def signup():
 def signin():
     login_data = request.get_json()
     email = login_data.get('email')
+    device_name = login_data.get('device_name')
     
     # Retrieve the user from the database
     user = users_collection.find_one({'email': email})
     
     if user:
-        if 'otp' not in user or user['otp'] is None:
-            otp = random.randint(100000, 999999)
-            users_collection.update_one({'email': email}, {'$set': {'otp': otp}})
-            send_otp(email, otp)
-            return jsonify({'success': True, 'message': 'OTP sent to email.', 'otp_required': True}), 200
+        # Check if 'session_id' exists
+        if 'session_id' in user:
+            return jsonify({'success': True, 'device': True,'device_name':device_name}), 200
         else:
-            return jsonify({'success': True, 'message': 'OTP already sent.', 'otp_required': True}), 200
+            # Generate a new UUID for session_id
+            session_id = str(uuid.uuid4())
+            users_collection.update_one({'email': email}, {'$set': {'session_id': session_id,'device_name':device_name}})
+            
+            # Continue with the OTP process
+            if 'otp' not in user or user['otp'] is None:
+                otp = random.randint(100000, 999999)
+                users_collection.update_one({'email': email}, {'$set': {'otp': otp}})
+                send_otp(email, otp)
+                return jsonify({'success': True, 'message': 'OTP sent to email.', 'otp_required': True}), 200
+            else:
+                return jsonify({'success': True, 'message': 'OTP already sent.', 'otp_required': True}), 200
+    else:
+        return jsonify({'success': False, 'message': 'Email is not registered.'}), 400
     
-    return jsonify({'success': False, 'message': 'Email is not registered.'}), 400
 
+@users_bp.route('/delete_session', methods=['POST'])
+def delete_session():
+    data = request.get_json()
+    email = data.get('email')
+
+    if not email:
+        return jsonify({'success': False, 'message': 'Email is required.'}), 400
+
+    # Find the user and update
+    result = users_collection.update_one(
+        {'email': email},
+        {'$unset': {'session_id': '','device_name':''}}
+    )
+
+    if result.matched_count == 0:
+        return jsonify({'success': False, 'message': 'User not found.'}), 404
+
+    return jsonify({'success': True, 'message': 'Session ID removed successfully.'}), 200
 # OTP Verification API
 @users_bp.route('/verify_otp', methods=['POST'])
 def verify_otp():

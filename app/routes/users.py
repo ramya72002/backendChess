@@ -72,7 +72,7 @@ def signin():
     if user:
         # Check if 'session_id' exists
         if 'session_id' in user:
-            return jsonify({'success': True, 'device': True,'device_name':device_name}), 200
+            return jsonify({'success': True, 'device': True,'device_name':user['device_name']}), 200
         else:
             # Generate a new UUID for session_id
             session_id = str(uuid.uuid4())

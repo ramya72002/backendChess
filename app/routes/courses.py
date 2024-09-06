@@ -252,6 +252,7 @@ def check_email():
     # Extract email addresses from the response
     emails = []
     emails.append("nsriramya7@gmail.com")
+    emails.append("sumit.compliance@gmail.com")
     for session in data.get('data', []):
         customer = session.get('customer_details')
         if customer and isinstance(customer, dict):

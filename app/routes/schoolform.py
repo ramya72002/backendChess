@@ -54,3 +54,15 @@ def submit_form():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+
+@schoolform_bp.route('/get_forms', methods=['GET'])
+def get_forms():
+    try:
+        # Fetch all documents from the collection
+        records = list(schoolform_coll.find({}, {'_id': 0}))  # Exclude the MongoDB ID field
+        
+        return jsonify(records), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

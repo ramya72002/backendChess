@@ -181,8 +181,8 @@ def send_email():
 
     try:
         # Email configuration
-        sender_email = "nsriramya30@gmail.com"
-        sender_password = "pqvq towd hrrx rhbm"  # Use your app-specific password here
+        sender_email = "connect@chesschamps.us"
+        sender_password = "iyln tkpp vlpo sjep"  # Use your app-specific password here
         subject = "Course Registration - Action Required"
 
         body = f"""

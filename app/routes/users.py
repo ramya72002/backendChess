@@ -11,8 +11,8 @@ from email.mime.text import MIMEText
 users_bp = Blueprint('users', __name__)
 
 # Email configuration
-SENDER_EMAIL = os.getenv('SENDER_EMAIL', 'kidschesstournament@gmail.com')
-SENDER_PASSWORD = os.getenv('SENDER_PASSWORD', 'rrcd xdhn dpig ijqk')
+SENDER_EMAIL = os.getenv('SENDER_EMAIL', 'connect@chesschamps.us')
+SENDER_PASSWORD = os.getenv('SENDER_PASSWORD', 'iyln tkpp vlpo sjep')
 
 # Utility function to send OTP via email
 def send_otp(email, otp):

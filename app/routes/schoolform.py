@@ -30,6 +30,7 @@ def submit_form():
         city = data.get('city')
         state = data.get('state')
         zip_code = data.get('zip_code')
+        RequestFinancialAssistance = data.get('RequestFinancialAssistance')
         
         # Optional: Perform validation on the data here (e.g., check if email is valid)
 
@@ -52,8 +53,10 @@ def submit_form():
                 "city": city,
                 "state": state,
                 "zip_code": zip_code
-            }
+            },
+            "RequestFinancialAssistance":RequestFinancialAssistance
         }
+        
 
         # Insert into MongoDB
         schoolform_coll.insert_one(form_data)

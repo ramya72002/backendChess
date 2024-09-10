@@ -26,6 +26,7 @@ def create_app():
     from app.routes.users import users_bp
     from app.routes.upcomingActivities import upcomming_bp
     from app.routes.schoolform import schoolform_bp
+    from app.routes.Learn_chess import learn_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(images_bp)
@@ -37,5 +38,6 @@ def create_app():
     app.register_blueprint(users_bp)
     app.register_blueprint(upcomming_bp)
     app.register_blueprint(schoolform_bp)
+    app.register_blueprint(learn_bp)
 
     return app

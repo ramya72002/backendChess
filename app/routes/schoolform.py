@@ -31,6 +31,7 @@ def submit_form():
         state = data.get('state')
         zip_code = data.get('zip_code')
         RequestFinancialAssistance = data.get('RequestFinancialAssistance')
+        SchoolName=data.get('SchoolName')
         
         # Optional: Perform validation on the data here (e.g., check if email is valid)
 
@@ -54,7 +55,8 @@ def submit_form():
                 "state": state,
                 "zip_code": zip_code
             },
-            "RequestFinancialAssistance":RequestFinancialAssistance
+            "RequestFinancialAssistance":RequestFinancialAssistance,
+            "SchoolName":SchoolName
         }
         
 

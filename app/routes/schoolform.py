@@ -84,9 +84,22 @@ def get_forms():
 def send_email_school_form():
     data = request.json
     email = data.get('email')
+    parent_first_name = data.get('parent_first_name')
+    parent_last_name = data.get('parent_last_name')
+    child_first_name = data.get('child_first_name')
+    child_last_name = data.get('child_last_name')
+    child_grade = data.get('child_grade')
+    phone = data.get('phone')
+    address_line_1 = data.get('address_line_1')
+    address_line_2 = data.get('address_line_2')
+    city = data.get('city')
+    state = data.get('state')
+    zip_code = data.get('zip_code')
+    request_financial_assistance = data.get('RequestFinancialAssistance')
+    school_name = data.get('SchoolName', "Mount Pleasant Elementary School")
 
-    if not email :
-        return jsonify({"error": "Email, session link, date, time, and coach name are required"}), 400
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
 
     try:
         # Email configuration
@@ -95,23 +108,34 @@ def send_email_school_form():
         subject = "Welcome to the Chess After-School Program – Your Enrollment is Confirmed!"
 
         body = (
-            f"Dear Participant,\n\n"
-            f"You have successfully enrolled in the Chess After-School Program.\n\n"
-            f"The program is designed to give students a fun and engaging way to learn the game while building critical thinking "
-            f"and problem-solving skills. Through interactive lessons and games, students will master key strategies, improve focus, "
-            f"and boost confidence, all in a supportive environment.\n\n"
+            f"Dear {parent_first_name} {parent_last_name},\n\n"
+            f"Thank you for enrolling {child_first_name} {child_last_name} in the Chess After-School Program at {school_name}.\n\n"
+            f"We are excited to have {child_first_name} join us for an engaging experience designed to enhance critical thinking, "
+            f"problem-solving skills, and confidence through interactive chess lessons and games.\n\n"
             
             f"**Program Details:**\n"
-            f"- 10 Week Training [K-5 Students]\n"
-            f"- Duration: 25 Sep 2024 to 18 Dec 2024\n"
-            f"- Timing: 3:30 PM - 4:30 PM\n"
-            f"- Note: No classes on 27 Nov 2024\n\n"
+            f"- **Program**: 10 Week Training for K-5 Students\n"
+            f"- **Duration**: 25 Sep 2024 to 18 Dec 2024\n"
+            f"- **Timing**: 3:30 PM - 4:30 PM\n"
+            f"- **Note**: No classes on 27 Nov 2024\n\n"
             
-            f"We hope you enjoy your chess sessions and look forward to helping you master this wonderful game!\n\n"
+            f"**Participant Information:**\n"
+            f"- **Child's Name**: {child_first_name} {child_last_name}\n"
+            f"- **Grade**: {child_grade}\n\n"
+            
+            f"**Contact Information:**\n"
+            f"- **Phone**: {phone}\n"
+            f"- **Address**: {address_line_1}, {address_line_2}, {city}, {state}, {zip_code}\n\n"
+            
+            f"{'**Financial Assistance**: Requested' if request_financial_assistance else '**Financial Assistance**: Not Requested'}\n\n"
+            
+            f"We look forward to a wonderful learning experience with {child_first_name}. If you have any questions or need further assistance, "
+            f"please do not hesitate to contact us.\n\n"
+            
             f"Best regards,\n"
+            f"Chess Champs Team\n"
             f"connect@chesschamps.us"
         )
-
 
         # Create the email
         msg = MIMEMultipart()
@@ -131,4 +155,5 @@ def send_email_school_form():
         return jsonify({"message": "Email sent successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 

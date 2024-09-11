@@ -169,7 +169,7 @@ def send_email_school_form_lombardy():
     try:
         # Email configuration
         sender_email = "connect@chesschamps.us"
-        sender_password = "your_app_specific_password_here"  # Use your app-specific password here
+        sender_password = "iyln tkpp vlpo sjep"  # Use your app-specific password here
         subject = "Thank You for Enrolling Your Child in the Lombardy Chess Program!"
 
         body = (

@@ -88,15 +88,7 @@ def send_email_school_form():
     parent_last_name = data.get('parent_last_name')
     child_first_name = data.get('child_first_name')
     child_last_name = data.get('child_last_name')
-    child_grade = data.get('child_grade')
-    phone = data.get('phone')
-    address_line_1 = data.get('address_line_1')
-    address_line_2 = data.get('address_line_2')
-    city = data.get('city')
-    state = data.get('state')
-    zip_code = data.get('zip_code')
-    request_financial_assistance = data.get('RequestFinancialAssistance')
-    school_name = data.get('SchoolName', "Mount Pleasant Elementary School")
+    school_name = data.get('SchoolName', "Lombardy Elementary School")
 
     if not email:
         return jsonify({"error": "Email is required"}), 400
@@ -105,35 +97,31 @@ def send_email_school_form():
         # Email configuration
         sender_email = "connect@chesschamps.us"
         sender_password = "iyln tkpp vlpo sjep"  # Use your app-specific password here
-        subject = "Welcome to the Chess After-School Program – Your Enrollment is Confirmed!"
+        subject = "Thank You for Enrolling Your Child in the Lombardy Chess Program!"
 
         body = (
             f"Dear {parent_first_name} {parent_last_name},\n\n"
-            f"Thank you for enrolling {child_first_name} {child_last_name} in the Chess After-School Program at {school_name}.\n\n"
-            f"We are excited to have {child_first_name} join us for an engaging experience designed to enhance critical thinking, "
-            f"problem-solving skills, and confidence through interactive chess lessons and games.\n\n"
+            f"We are excited to welcome {child_first_name}  {child_last_name} to the after-school chess program at {school_name}! "
+            f"Thank you for trusting us with your child's chess development and for encouraging their interest in this wonderful game.\n\n"
+            
+            f"At Chess Champs, we believe that chess sharpens minds and nurtures critical thinking, problem-solving, and concentration skills. "
+            f"Our program is both fun and educational, and we are committed to making this an enriching experience for {child_first_name}.\n\n"
             
             f"**Program Details:**\n"
-            f"- **Program**: 10 Week Training for K-5 Students\n"
-            f"- **Duration**: 25 Sep 2024 to 18 Dec 2024\n"
-            f"- **Timing**: 3:30 PM - 4:30 PM\n"
-            f"- **Note**: No classes on 27 Nov 2024\n\n"
+            f"- **Start Date**: 26 Sep 2024\n"
+            f"- **Duration**: 10 weeks\n"
+            f"- **Time**: 3:30 PM - 4:30 PM\n\n"
             
-            f"**Participant Information:**\n"
-            f"- **Child's Name**: {child_first_name} {child_last_name}\n"
-            f"- **Grade**: {child_grade}\n\n"
+            f"Throughout the program, {child_first_name} will learn valuable chess strategies, participate in friendly matches, "
+            f"and develop confidence both on and off the board.\n\n"
             
-            f"**Contact Information:**\n"
-            f"- **Phone**: {phone}\n"
-            f"- **Address**: {address_line_1}, {address_line_2}, {city}, {state}, {zip_code}\n\n"
+            f"Please feel free to contact us if you have any questions or need further information.\n\n"
             
-            f"{'**Financial Assistance**: Requested' if request_financial_assistance else '**Financial Assistance**: Not Requested'}\n\n"
-            
-            f"We look forward to a wonderful learning experience with {child_first_name}. If you have any questions or need further assistance, "
-            f"please do not hesitate to contact us.\n\n"
+            f"Once again, thank you for enrolling {child_first_name} in our program. We look forward to an exciting journey ahead!\n\n"
             
             f"Best regards,\n"
-            f"Chess Champs Team\n"
+            f"Training Team\n"
+            f"Delaware Chess Champs\n"
             f"connect@chesschamps.us"
         )
 
@@ -155,5 +143,3 @@ def send_email_school_form():
         return jsonify({"message": "Email sent successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-

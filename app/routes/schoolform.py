@@ -129,11 +129,11 @@ def send_email_school_form_mpes():
         # Email configuration
         sender_email = "connect@chesschamps.us"
         sender_password = "iyln tkpp vlpo sjep"  # Use your app-specific password here
-        subject = "Thank You for Enrolling Your Child in the Lombardy Chess Program!"
+        subject = "Thank You for Enrolling Your Child in the Mount Pleasant Elementary School Program!"
 
         body = (
             "Dear Parents,\n\n"
-            "We are excited to welcome your child to the after-school chess program at Lombardy Elementary! Thank you for trusting us with your child's chess development and for encouraging their interest in this wonderful game.\n\n"
+            "We are excited to welcome your child to the after-school chess program at Mount Pleasant Elementary! Thank you for trusting us with your child's chess development and for encouraging their interest in this wonderful game.\n\n"
             "At Chess Champs, we believe that chess not only sharpens minds but also nurtures critical thinking, problem-solving, and concentration skills. Our program is designed to be both fun and educational, and we are committed to making this an enriching experience for your child.\n\n"
             "Classes will begin on Sep 26th, and we have a fantastic lineup of activities planned. Throughout the program, your child will learn valuable chess strategies, participate in friendly matches, and develop their confidence both on and off the board.\n\n"
             "Please don't hesitate to reach out to us if you have any questions or need further information.\n\n"

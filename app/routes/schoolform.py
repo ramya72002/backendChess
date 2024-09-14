@@ -1,3 +1,4 @@
+import random
 from flask import Blueprint, request, jsonify
 from pymongo import MongoClient
 from app.database import schoolform_coll
@@ -11,12 +12,20 @@ from app.utils.email_utils import send_email
 
 schoolform_bp = Blueprint('schoolform', __name__)
 
+# Function to generate a random 6-digit profile_id
+def generate_unique_profile_id():
+    while True:
+        profile_id = str(random.randint(100000, 999999))  # Generate a random 6-digit number
+        # Check if the profile_id already exists in the database
+        if schoolform_coll.count_documents({"profile_id": profile_id}) == 0:
+            return profile_id
+
 @schoolform_bp.route('/submit_form', methods=['POST'])
 def submit_form():
     try:
         # Parse the incoming JSON data
         data = request.json
-        
+
         # Extract and validate required fields
         parent_first_name = data.get('parent_first_name')
         parent_last_name = data.get('parent_last_name')
@@ -26,12 +35,16 @@ def submit_form():
         email = data.get('email')
         phone = data.get('phone')
         RequestFinancialAssistance = data.get('RequestFinancialAssistance')
-        SchoolName=data.get('SchoolName')
-        
+        SchoolName = data.get('SchoolName')
+
         # Optional: Perform validation on the data here (e.g., check if email is valid)
+
+        # Generate a unique profile_id
+        profile_id = generate_unique_profile_id()
 
         # Prepare document for MongoDB insertion
         form_data = {
+            "profile_id": profile_id,  # Add the unique profile_id here
             "parent_name": {
                 "first": parent_first_name,
                 "last": parent_last_name
@@ -43,20 +56,17 @@ def submit_form():
             "child_grade": child_grade,
             "email": email,
             "phone": phone,
-            "RequestFinancialAssistance":RequestFinancialAssistance,
-            "SchoolName":SchoolName
+            "RequestFinancialAssistance": RequestFinancialAssistance,
+            "SchoolName": SchoolName
         }
-        
 
         # Insert into MongoDB
         schoolform_coll.insert_one(form_data)
 
-        return jsonify({"message": "Form submitted successfully!"}), 201
+        return jsonify({"message": "Form submitted successfully!", "profile_id": profile_id}), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
-
 @schoolform_bp.route('/get_forms', methods=['GET'])
 def get_forms():
     try:
@@ -162,3 +172,51 @@ def send_email_school_form_mpes():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@schoolform_bp.route('/update_forms', methods=['POST'])
+def update_forms():
+    try:
+        # Parse the incoming JSON data
+        data = request.json
+
+        # Extract the list of updates, each with a profile_id and its associated fields
+        updates = data.get('updates', [])  # Expecting a list of update objects
+
+        # Ensure that updates are provided and it's a non-empty list
+        if not updates or not isinstance(updates, list):
+            return jsonify({"error": "A list of updates is required!"}), 400
+
+        # Process each update
+        update_results = []
+        for update in updates:
+            profile_id = update.get('profile_id')
+            payment_status = update.get('payment_status')
+            group = update.get('group')
+            level = update.get('level')
+
+            # Ensure profile_id is provided
+            if not profile_id:
+                update_results.append({"profile_id": None, "status": "Profile ID is required"})
+                continue
+
+            # Prepare the update data
+            update_data = {
+                "payment_status": payment_status,
+                "group": group,
+                "level": level
+            }
+
+            # Update the document
+            result = schoolform_coll.update_one(
+                {"profile_id": profile_id},
+                {"$set": update_data}
+            )
+
+            if result.matched_count > 0:
+                update_results.append({"profile_id": profile_id, "status": "Updated successfully"})
+            else:
+                update_results.append({"profile_id": profile_id, "status": "No matching profile ID found"})
+
+        return jsonify({"results": update_results}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

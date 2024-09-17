@@ -273,9 +273,9 @@ def send_mails_for_updated_records():
 
             # Determine the online portal link based on the group
             if group == "In School Program":
-                online_portal_link = "https://school-program.com"
+                online_portal_link = "https://chess-in-school.vercel.app/"
             else:
-                online_portal_link = "https://club.com"
+                online_portal_link = "https://chess-learning-platform.vercel.app/"
 
             # Send the email
             if not send_email(email, online_portal_link):

@@ -220,3 +220,68 @@ def update_forms():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+def send_email(email, online_portal_link):
+    sender_email = "connect@chesschamps.us"
+    sender_password = "iyln tkpp vlpo sjep"  # Use your app-specific password here
+    subject = "Access Your Online Portal"
+
+    body = (
+        f"Dear Participant,\n\n"
+        f"Here is the link to access the portal: {online_portal_link}\n\n"
+        f"You can sign in using your email address: {email}\n\n"
+        f"Best regards,\n"
+        f"Training Team\n"
+        f"Delaware Chess Champ"
+    )
+
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Failed to send email: {str(e)}")
+        return False
+
+@schoolform_bp.route('/send_mails_for_updated_records', methods=['POST'])
+def send_mails_for_updated_records():
+    try:
+        # Parse the incoming JSON data
+        data = request.json
+
+        # Extract the updates
+        updates = data.get('updates', [])
+
+        if not updates:
+            return jsonify({"error": "No updates provided!"}), 400
+
+        for update in updates:
+            profile_id = update.get('profile_id')
+            group = update.get('group')
+            email = update.get('email')
+
+            if not profile_id or not email:
+                return jsonify({"error": "Profile ID and email are required for each update!"}), 400
+
+            # Determine the online portal link based on the group
+            if group == "In School Program":
+                online_portal_link = "https://school-program.com"
+            else:
+                online_portal_link = "https://club.com"
+
+            # Send the email
+            if not send_email(email, online_portal_link):
+                return jsonify({"status": "Failed to send email for some updates."}), 500
+
+        return jsonify({"status": "Emails sent successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

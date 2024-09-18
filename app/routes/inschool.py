@@ -372,7 +372,7 @@ def update_registered_courses_inschool():
 
     # Retrieve the user from the database
     user = schoolform_coll.find_one({'email': email})
-
+    
     if user:
         # Initialize registered_courses if it does not exist
         if 'registered_inschool_courses' not in user:
@@ -382,6 +382,9 @@ def update_registered_courses_inschool():
         course_exists = any(course['course_title'] == course_title for course in user['registered_inschool_courses'])
         
         if course_exists:
+            # id sttus is completed then no change in db
+            if status=="Completed":
+                return jsonify({'success': True, 'message': 'Registered courses updated successfully'}), 200
             # Update the existing course entry
             schoolform_coll.update_one(
                 {'email': email, 'registered_inschool_courses.course_title': course_title},

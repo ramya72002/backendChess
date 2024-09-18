@@ -397,3 +397,50 @@ def update_registered_courses_inschool():
         return jsonify({'success': True, 'message': 'Registered courses updated successfully'}), 200
     else:
         return jsonify({'success': False, 'message': 'User not found'}), 404
+
+
+
+@inschool_bp.route('/update-course-completion-inschool', methods=['POST'])
+def update_course_completion_inschool():
+    data = request.json
+    required_fields = ['email', 'course_title', 'completed']
+
+    # Check for required fields
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'error': f"'{field}' is required"}), 400
+
+    email = data['email']
+    course_title = data['course_title']
+    completed = data['completed']
+
+    # Search for the user by email
+    existing_user = schoolform_coll.find_one({'email': email})
+
+    if not existing_user:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Check if 'registered_inschool_courses' field exists
+    if 'registered_inschool_courses' not in existing_user:
+        return jsonify({'error': 'No registered_inschool_courses found for this user'}), 404
+
+    registered_inschool_courses = existing_user['registered_inschool_courses']
+    
+    # Find the course
+    course_found = False
+    for course in registered_inschool_courses:
+        if course['course_title'] == course_title:
+            course_found = True
+            # Check if the new completed value is greater
+            if course['completed'] < completed:
+                # Update the completed_percentage
+                schoolform_coll.update_one(
+                    {'email': email, 'registered_inschool_courses.course_title': course_title},
+                    {'$set': {'registered_inschool_courses.$.completed': completed}}
+                )
+                return jsonify({'message': 'Course completion updated successfully'}), 200
+            else:
+                return jsonify({'message': 'No update needed, completed value is not greater'}), 200
+
+    if not course_found:
+        return jsonify({'error': 'Course not found'}), 404

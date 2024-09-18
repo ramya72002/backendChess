@@ -52,7 +52,7 @@ def signinschool():
     # Retrieve the user from the database
     user = schoolform_coll.find_one({'email': email})
     
-    if user.group=="In School Program":
+    if user["group"]=="In School Program":
         # Check if 'session_id' exists
         if 'session_id' in user:
             return jsonify({'success': True, 'device': True,'device_name':user['device_name']}), 200

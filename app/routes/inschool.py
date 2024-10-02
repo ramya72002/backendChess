@@ -132,7 +132,7 @@ def get_user_inschool_details():
     else:
         return jsonify({'success': False, 'message': 'User not found'}), 404
 #update level
-@inschool_bp.route('/updatelevel', methods=['POST'])
+@inschool_bp.route('/updatelevelcompleted', methods=['POST'])
 def update_level_when_completed():
     # Get the JSON data from the request
     data = request.get_json()

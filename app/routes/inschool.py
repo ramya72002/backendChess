@@ -131,7 +131,29 @@ def get_user_inschool_details():
         return jsonify({'success': True, 'data': user}), 200
     else:
         return jsonify({'success': False, 'message': 'User not found'}), 404
+#update level
+@inschool_bp.route('/updatelevel', methods=['POST'])
+def update_level_when_completed():
+    # Get the JSON data from the request
+    data = request.get_json()
+    
+    # Extract email and level from the request data
+    email = data.get('email')
+    level = data.get('level')
 
+    if not email or not level:
+        return jsonify({'success': False, 'message': 'Email and level parameters are required'}), 400
+
+    # Update the user's level in the database
+    result = schoolform_coll.update_one(
+        {'email': email},  # Find user by email
+        {'$set': {'level': level}}  # Set the new level
+    )
+
+    if result.modified_count > 0:
+        return jsonify({'success': True, 'message': 'Level updated successfully'}), 200
+    else:
+        return jsonify({'success': False, 'message': 'User not found or level already up to date'}), 404
 
 @inschool_bp.route('/imageupdateinschool', methods=['POST'])
 def update_user_inschool_image():
@@ -497,3 +519,4 @@ def calculate_scores_inschool():
         return jsonify({'success': True, 'scores': scores}), 200
     else:
         return jsonify({'success': True, 'scores': scores}), 200
+    

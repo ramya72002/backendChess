@@ -80,7 +80,25 @@ def get_forms():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+@schoolform_bp.route('/get_forms_group', methods=['GET'])
+def get_forms_by_group():
+    try:
+        # Get query parameters from the request
+        group = request.args.get('group')  # Fetch 'group' parameter from the query string
 
+        # Build the filter condition dynamically
+        filter_condition = {}
+        if group:
+            filter_condition['group'] = group
+
+        # Fetch documents matching the dynamic filter condition
+        records = list(schoolform_coll.find(filter_condition, {'_id': 0}))  # Exclude the MongoDB ID field
+
+        return jsonify(records), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 @schoolform_bp.route('/send-email-form-lombardy', methods=['POST'])
 def send_email_school_form_lombardy():
     data = request.json
